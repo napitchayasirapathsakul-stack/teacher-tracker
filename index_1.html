@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบติดตามการส่งงานครู</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0fbec;--card:#fff;--tx:#17261e;--mu:#587064;--g:#0c9a52;--gd:#0a7f45;--gold:#ffb400;--bd:#c9e8d1;--ok:#14b866;--no:#f0443a;--na:#a3b0a8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111a15;--card:#1a2620;--tx:#e8eee9;--mu:#9fb0a6;--g:#3fd488;--gd:#0c5a36;--gold:#ffc83a;--bd:#2c3b33}}
+:root[data-theme="dark"]{--bg:#111a15;--card:#1a2620;--tx:#e8eee9;--mu:#9fb0a6;--g:#3fd488;--gd:#0c5a36;--gold:#ffc83a;--bd:#2c3b33}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Sarabun,"Noto Sans Thai",sans-serif;font-size:15px}
+header{background:linear-gradient(135deg,#087a43,#12a95b 70%,#2bbf6a);color:#fff;padding:18px 16px;border-bottom:5px solid var(--gold)}
+header h1{margin:0;font-size:20px}header p{margin:4px 0 0;font-size:13px;opacity:.9}
+main{max-width:1200px;margin:auto;padding:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.c{background:var(--card);border:1px solid var(--bd);border-top:3px solid var(--gold);border-radius:8px;padding:12px}
+.c small{color:var(--mu)}.c b{display:block;font-size:26px;color:var(--g)}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-top:14px}
+h2{font-size:16px;margin:0 0 10px;color:var(--g)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.bar .l{width:120px;flex:none}.bar .t{flex:1;height:14px;background:var(--bd);border-radius:7px;overflow:hidden}
+.bar .t i{display:block;height:100%}.bar .v{width:64px;text-align:right;flex:none}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+input,select,button{font:inherit;padding:7px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
+button{cursor:pointer;background:var(--g);color:#fff;border:0}
+button.o{background:var(--card);color:var(--g);border:1px solid var(--g)}
+.w{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--bd);padding:6px;text-align:center}
+th{background:var(--gd);color:#fff;font-weight:600;white-space:normal}
+td.n{text-align:left;white-space:nowrap;position:sticky;left:0;background:var(--card)}
+td.s{cursor:pointer;user-select:none;font-size:18px}
+td.s:hover{background:var(--bd)}
+td input{width:120px;padding:3px 6px;font-size:12px}
+.tag{padding:2px 8px;border-radius:10px;font-size:12px;color:#fff;white-space:nowrap}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--mu);margin-bottom:8px}
+[hidden]{display:none!important}
+.hm{max-width:520px;margin:auto;text-align:center}.hm select{width:100%;font-size:17px;padding:12px;margin:12px 0}.hm p{color:var(--mu)}
+.tc{background:var(--card);border:1px solid var(--bd);border-top:4px solid var(--gold);border-radius:10px;padding:16px;margin-bottom:12px}.tc .tn{font-size:19px;font-weight:700;color:var(--g)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--bd)}.row:last-child{border:0}.row .tag{font-size:14px;padding:5px 11px}
+.bt{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.bt button{flex:1;min-width:140px;padding:11px}
+.wc{display:inline-block;min-width:34px;text-align:center;border-radius:6px;padding:1px 6px;color:#222;font-size:12px;font-weight:600}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.ch{text-align:center;font-weight:600;color:var(--g);padding:4px 0;font-size:13px}
+.cc{min-height:78px;border:1px solid var(--bd);border-radius:6px;padding:3px;cursor:pointer;overflow:hidden;font-size:12px;background:var(--card)}.cc.o{border:0;background:none;cursor:default}.cc.td{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}.cc.sel{background:var(--bd)}
+.ev{background:var(--g);color:#fff;border-radius:3px;padding:0 3px;margin-top:2px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev.du{background:var(--gold)}.mo{font-size:11px;color:var(--mu)}.bd{display:none}
+@media(max-width:600px){.cc{min-height:50px}.ev,.mo{display:none}.bd{display:inline-block;background:var(--g);color:#fff;border-radius:8px;padding:0 6px;font-size:11px;margin-top:3px}
+#st thead{display:none}#st tr{display:block;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;padding:4px}#st td{display:block;text-align:left;border:0;padding:3px 6px}#st td::before{content:attr(data-l) ": ";color:var(--mu)}.fg{grid-template-columns:1fr!important}}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fg label{display:block;font-size:13px;color:var(--mu)}.fg input:not([type=checkbox]){width:100%}.fg .wd{grid-column:1/-1}.ck{display:inline-block;margin:2px 10px 2px 0;font-size:13px;color:var(--tx)}
+#rp{display:none}#rp.on{display:block}
+#rp h3{color:var(--g);margin:14px 0 4px;font-size:15px}
+@media print{body:not(.prp) header,body:not(.prp) .cards,body:not(.prp) .box:not(#rp),body:not(.prp) .tools{display:none}#rp{display:block}}
+.pg{font-size:12px;color:var(--mu);margin:2px 0 0}
+#pjt td{text-align:left}#pjt td.ct{text-align:center;white-space:nowrap}#pjt tr.gr td{background:var(--bd);font-weight:700;color:var(--g)}#pjt tr.ac td.nm{padding-left:22px;font-weight:400}#pjt td.nm{font-weight:600}
+#pjt select,#pjt input{padding:3px 6px;font-size:12px}#pjt input[type=date]{width:132px}#pjt input.nt{width:130px}
+.sb{border:0;border-radius:10px;padding:3px 10px;font-size:12px;color:#fff;cursor:pointer}
+.pl{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.pl{grid-template-columns:1fr}}
+.pi{padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}.pi:last-child{border:0}.pi small{color:var(--mu)}
+#ppt tr{cursor:pointer}#ppt tr:hover td{background:var(--bd)}#ppt td:first-child{text-align:left}
+#prp{display:none}#proj select,#proj input{max-width:100%}#pgr{width:280px}
+@media(max-width:600px){#pjt thead{display:none}#pjt tr{display:block;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;padding:4px}#pjt tr.gr{border:0;padding:0}#pjt td{display:block;border:0;padding:3px 6px;text-align:left!important}#pjt td[data-l]::before{content:attr(data-l) ": ";color:var(--mu)}#pjt tr.ac td.nm{padding-left:6px}}
+@media print{body.prp>*:not(#proj){display:none!important}body.prp #proj>*:not(#prp){display:none!important}body.prp #prp{display:block!important;font-size:13px}#prp table{font-size:11px}#prp th{background:#ddd;color:#000}}
+</style>
+</head>
+<body>
+<header><h1>ระบบสรุปและติดตามความครบถ้วนการส่งงานของครู</h1><p><span id="tl1">ก่อนปิดภาคเรียนที่ 1 ปีการศึกษา 2569</span> · โรงเรียนวัดแสนเกษม สำนักงานเขตหนองจอก กรุงเทพมหานคร</p><div style="margin-top:8px">ภาคเรียน: <select id="term" style="padding:5px 8px"></select></div></header>
+<main id="home"><div class="hm box"><h2>ระบบติดตามการส่งงานของครู</h2><p>เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</p><select id="pick"><option value="">เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</option></select><button id="tosch" class="o" style="width:100%;padding:12px;margin-bottom:8px">ตารางงานและปฏิทิน (ดูภาพรวม)</button><button id="topj" class="o" style="width:100%;padding:12px;margin-bottom:8px">ติดตามโครงการ/กิจกรรม และการส่งรายงาน</button><button id="toadm" style="width:100%;padding:12px" class="o">admin</button><div id="lg" hidden style="margin-top:12px"><input id="pw" type="password" autocomplete="off" placeholder="รหัสผ่าน admin" style="width:100%;font-size:16px;padding:11px"><button id="lgo" style="width:100%;padding:12px;margin-top:8px">เข้าสู่ระบบ</button><div id="er" style="color:var(--no);margin-top:8px;min-height:20px"></div></div></div></main>
+<main id="teacher" hidden></main>
+<main id="sched" hidden>
+<div class="box"><div class="tools"><button class="o" id="sbk">กลับ</button><b style="align-self:center;color:var(--g)">ตารางงานและปฏิทิน</b></div>
+<div class="tools"><button class="o" id="spv">‹</button><b id="sttl" style="align-self:center;min-width:130px;text-align:center"></b><button class="o" id="snx">›</button><button class="o" id="std">เดือนนี้</button><button id="sc">ปฏิทิน</button><button class="o" id="sb">ตาราง</button><select id="swho"></select><button id="evb" hidden>+ เพิ่มรายการ</button></div>
+<div id="svw"></div></div>
+<div class="box" id="sdy" hidden></div>
+<div class="box" id="evf" hidden></div>
+</main>
+<main id="proj" hidden>
+<div class="box"><div class="tools"><button class="o" id="pbk">กลับ</button><b style="align-self:center;color:var(--g)">ติดตามการดำเนินโครงการ/กิจกรรม และการส่งรายงาน ปีการศึกษา <span id="pyr">2569</span></b></div>
+<div class="tools"><select id="pwho"></select><select id="pst"><option value="">ทุกสถานะ</option><option value="1">ยังไม่ส่งรายงาน</option><option value="0">ส่งรายงานแล้ว</option></select><select id="pgr"><option value="">ทุกยุทธศาสตร์</option></select><input id="pq" placeholder="ค้นหาโครงการ/กิจกรรม"><button class="o" id="prs">ล้างตัวกรอง</button><button id="prb">พิมพ์สรุปผล</button><button id="padd" hidden>+ เพิ่มรายการ</button></div>
+<div id="pmsg" style="color:var(--no);min-height:18px"></div>
+<div class="cards" id="pcards"></div></div>
+<div class="box" id="pme" hidden></div>
+<div class="grid2" id="pov"><div class="box"><h2>ความครบถ้วนการส่งรายงานตามยุทธศาสตร์</h2><div id="pch"></div></div><div class="box"><h2>สรุปรายบุคคล <small style="color:var(--mu);font-weight:400">(แตะชื่อเพื่อดูรายละเอียด)</small></h2><div class="w"><table id="ppt"></table></div></div></div>
+<div class="box" id="pfm" hidden></div>
+<div class="box"><h2 id="pth">รายการโครงการ/กิจกรรม</h2><div class="leg"><span>🟢 ส่งรายงานแล้ว</span><span>🔴 ยังไม่ส่งรายงาน</span><span id="phint"></span></div><div class="w"><table id="pjt"></table></div></div>
+<div id="prp"></div>
+</main>
+<main id="admin" hidden>
+<div class="tools"><button class="o" id="lgx">ออกจากระบบ admin</button><button id="rfb">รีเฟรชข้อมูลล่าสุด</button><button id="adsch" class="o">ตารางงาน/ปฏิทิน (เพิ่ม-แก้ไข)</button><button id="adpj" class="o">ติดตามโครงการ/กิจกรรม (แก้ไข)</button></div><div class="tools"><input id="tn" placeholder="เพิ่มภาคเรียน เช่น 2/2569" style="width:210px"><button id="tab" class="o">เพิ่มภาคเรียน</button></div><div class="tools"><input id="tnm" placeholder="เพิ่มครูใหม่ เช่น นางสาวสมหญิง ใจดี" style="width:290px"><button id="tba" class="o">เพิ่มครู</button></div><div id="ms" style="color:var(--no);min-height:18px"></div>
+<details class="box"><summary><b>นำเข้าข้อมูลเดิมเข้าฐานข้อมูลกลาง (ทำครั้งเดียว)</b></summary><p style="color:var(--mu);font-size:13px">วางข้อความสำรองข้อมูลที่คัดลอกจากระบบเดิม</p><textarea id="imj" rows="4" style="width:100%;font-size:12px"></textarea><div class="tools"><button id="imb">นำเข้า</button></div><div id="imr"></div></details>
+<details class="box"><summary><b>นำเข้ารายการโครงการ/กิจกรรม ปีการศึกษา 2569 (ทำครั้งเดียว)</b></summary><p style="color:var(--mu);font-size:13px">นำเข้า 76 รายการ (32 โครงการ 44 กิจกรรม) จากแบบติดตามการดำเนินโครงการ/กิจกรรม ระบบจะไม่เขียนทับถ้ามีข้อมูลอยู่แล้ว</p><div class="tools"><button id="pjimb">นำเข้ารายการโครงการ</button></div><div id="pjimr"></div></details>
+<div class="cards" id="cards"></div>
+<div class="grid2">
+<div class="box"><h2>จำนวนงานตามสถานะ</h2><div id="ch1"></div></div>
+<div class="box"><h2>ความครบถ้วนแต่ละประเภทงาน</h2><div id="ch2"></div></div>
+</div>
+<div class="box">
+<h2>ตารางติดตามการส่งงาน ณ ปัจจุบัน <span id="tl2"></span></h2>
+<div class="leg">คลิกที่ช่องเพื่อเปลี่ยนสถานะ: <span>🟢 ส่งแล้ว/ตรวจสอบแล้ว</span><span>🔴 ยังไม่ส่ง</span><span>⚪ ไม่เกี่ยวข้อง</span></div>
+<div class="tools">
+<input id="q" placeholder="ค้นหาชื่อครู">
+<select id="ft"><option value="">ทุกรายการงาน</option></select>
+<select id="fs"><option value="">ทุกสถานะ</option><option value="0">ส่งแล้ว/ตรวจสอบแล้ว</option><option value="1">ยังไม่ส่ง</option><option value="2">ไม่เกี่ยวข้อง</option></select>
+<select id="fc"><option value="">ครูทั้งหมด</option><option value="ok">ครูที่ส่งครบ</option><option value="pend">ครูที่ยังมีงานค้าง</option></select>
+<button class="o" id="rs">ล้างตัวกรอง</button>
+<button id="rb">สรุปรายงาน</button>
+</div>
+<div class="w"><table id="mx"></table></div>
+</div>
+<div class="box"><h2>รายการที่ต้องติดตาม (สถานะ 🔴 ยังไม่ส่ง)</h2><div class="w"><table id="fl"></table></div></div>
+<div class="box" id="rp"></div>
+</main>
+<script>
+let T=["นางเกษร จันทะเวช","นางจุฑามาศ อาจวิชิต","นางสาวอรณิชา อินต๊ะสอน","นางสุภาพร พิลึก","นางสาวศิญาภัสร์ บวรรังสีพัชร์","นายมงคลพิพัฒน์ ปิ่นแก้ว","นางสาววรีรัตน์ มลิวัลย์","นายวีรพล สุขดิบ","นายธันวา ทับอินทร์","นายภูวนาท สีราชเลา","นางสาวนันทนา กรินตา","นางสาวทัศนา นพพลกรัง","นายวรปรัชญ์ วัฒนศิลป์"];
+const K=["เยี่ยมบ้าน","การอ่านประจำเดือน","วิเคราะห์ผู้เรียน","บัญชีนม","บัญชีเรียกชื่อ","รายงานโครงการ","บันทึกหลังแผน (สค.)","วิจัยในชั้นเรียน","รายงานการอบรม","รายงานผลการเรียน"];
+const ST=[{n:"ส่งแล้ว/ตรวจสอบแล้ว",e:"🟢",c:"var(--ok)"},{n:"ยังไม่ส่ง",e:"🔴",c:"var(--no)"},{n:"ไม่เกี่ยวข้อง",e:"⚪",c:"var(--na)"}];
+const API="https://script.google.com/macros/s/AKfycby8sOIXP7zEzWaunedJHsI2QhRF_lNp3gpAlKSlLa7gs6mR8GgKujSsT54f4y0bgPSh7Q/exec";
+let S=[],N=[],PWD="",TERMS=["1/2569"],TERM="1/2569",CUR="home",PI=0;
+async function api(b){if(!API.startsWith("https://"))throw new Error("cfg");const r=await fetch(API,{method:"POST",body:JSON.stringify(Object.assign({t:TERM},b))});return r.json()}
+function msg(t){$("ms").textContent=t}
+const $=id=>document.getElementById(id);
+K.forEach((k,i)=>$("ft").add(new Option(k,i)));
+const cnt=()=>{const c=[0,0,0];S.forEach(r=>r.forEach(v=>c[v]++));return c};
+const pct=(a,b)=>b?Math.round(a*1000/b)/10:0;
+const full=i=>!S[i].includes(1);
+function bars(el,rows){$(el).innerHTML=rows.map(r=>`<div class="bar"><span class="l">${r[0]}</span><span class="t"><i style="width:${r[2]}%;background:${r[3]}"></i></span><span class="v">${r[1]}</span></div>`).join("")}
+function dash(){
+const c=cnt(),tot=T.length*K.length,app=tot-c[2],done=c[0],fc=T.filter((_,i)=>full(i)).length;
+$("cards").innerHTML=[["ครูทั้งหมด",T.length+" คน"],["รายการงานทั้งหมด",T.length*K.length+" รายการ"],["ส่งแล้ว",c[0]+" รายการ"],["ยังไม่ส่ง",c[1]+" รายการ"],["ไม่เกี่ยวข้อง",c[2]+" รายการ"],["ครูที่ส่งครบ",fc+" คน"],["ความครบถ้วนภาพรวม",pct(done,app)+"%"]].map(x=>`<div class="c"><small>${x[0]}</small><b>${x[1]}</b></div>`).join("");
+bars("ch1",ST.map((s,i)=>[s.n,c[i],pct(c[i],tot),s.c]));
+bars("ch2",K.map((k,j)=>{const a=S.filter(r=>r[j]!=2).length,d=S.filter(r=>r[j]==0).length;return[k,d+"/"+a,pct(d,a),"var(--g)"]}));
+}
+function rows(){
+const q=$("q").value.trim(),t=$("ft").value,s=$("fs").value,f=$("fc").value;
+return T.map((_,i)=>i).filter(i=>{
+if(q&&!T[i].includes(q))return false;
+if(f==="ok"&&!full(i))return false;
+if(f==="pend"&&full(i))return false;
+if(s!==""){const cols=t!==""?[+t]:K.map((_,j)=>j);if(!cols.some(j=>S[i][j]==s))return false}
+return true})}
+function mx(){
+const t=$("ft").value,cols=K.map((_,j)=>j).filter(j=>t===""||j==t),R=rows();
+$("mx").innerHTML=`<tr><th>ลำดับ</th><th>รายชื่อครู</th>${cols.map(j=>`<th>${K[j]}</th>`).join("")}<th>สรุป</th><th>หมายเหตุ</th></tr>`+R.map(i=>`<tr><td>${i+1}</td><td class="n">${T[i]}</td>${cols.map(j=>`<td class="s" title="${ST[S[i][j]].n}" onclick="tg(${i},${j})">${ST[S[i][j]].e}</td>`).join("")}<td><span class="tag" style="background:${full(i)?"var(--ok)":"var(--gold)"}">${full(i)?"ครบ":"รอติดตาม"}</span></td><td><input value="${N[i].replace(/"/g,"&quot;")}" placeholder="หมายเหตุ" onchange="nt(${i},this.value)"></td></tr>`).join("")||`<tr><td colspan="14">ไม่พบข้อมูล</td></tr>`;
+const L=[];R.forEach(i=>K.forEach((k,j)=>{if(S[i][j]==1&&(t===""||j==t))L.push(`<tr><td style="text-align:left">${T[i]}</td><td style="text-align:left">${k}</td><td><span class="tag" style="background:var(--no)">ยังไม่ส่ง</span></td><td style="text-align:left">${N[i]}</td></tr>`)}));
+$("fl").innerHTML=`<tr><th>ครู</th><th>งานที่ยังไม่ส่ง</th><th>สถานะ</th><th>หมายเหตุ</th></tr>`+(L.join("")||`<tr><td colspan="4">ไม่มีรายการค้าง 🎉</td></tr>`);
+}
+async function tg(i,j){const o=S[i][j],v=(o+1)%3;S[i][j]=v;all();try{const r=await api({a:"set",pw:PWD,r:i,c:j,v});if(!r.ok)throw 0;msg("")}catch(e){S[i][j]=o;all();msg("บันทึกไม่สำเร็จ กรุณาลองใหม่")}}
+async function nt(i,v){const o=N[i];N[i]=v;try{const r=await api({a:"note",pw:PWD,r:i,v});if(!r.ok)throw 0;msg("");if($("rp").classList.contains("on"))rep()}catch(e){N[i]=o;mx();msg("บันทึกหมายเหตุไม่สำเร็จ กรุณาลองใหม่")}}
+function all(){dash();mx();if($("rp").classList.contains("on"))rep()}
+["q","ft","fs","fc"].forEach(id=>$(id).addEventListener("input",mx));
+$("rs").onclick=()=>{["q","ft","fs","fc"].forEach(id=>$(id).value="");mx()};
+function rep(){
+const c=cnt(),tot=T.length*K.length,app=tot-c[2],ok=T.map((_,i)=>i).filter(full),pd=T.map((_,i)=>i).filter(i=>!full(i));
+const miss=[];S.forEach((r,i)=>r.forEach((v,j)=>{if(v==1)miss.push(`${T[i]} — ${K[j]}${N[i]?" ("+N[i]+")":""}`)}));
+const notes=T.map((n,i)=>N[i]?`${n}: ${N[i]}`:"").filter(Boolean);
+$("rp").innerHTML=`<div style="text-align:center"><h2 style="font-size:18px">สรุปผลการติดตามการส่งงานของครู<br>ก่อนปิด${tlab()}</h2></div>
+<h3>1. ข้อมูลทั่วไป</h3><p>โรงเรียนวัดแสนเกษม สำนักงานเขตหนองจอก กรุงเทพมหานคร · ข้อมูล ณ วันที่ ${new Date().toLocaleDateString("th-TH",{dateStyle:"long"})}</p>
+<h3>2. จำนวนครู</h3><p>${T.length} คน</p>
+<h3>3. จำนวนรายการงานที่ติดตาม</h3><p>${K.length} รายการต่อคน รวม ${tot} รายการ (${K.join(", ")})</p>
+<h3>4. สรุปสถานะการส่งงาน</h3><p>${ST.map((s,i)=>s.e+" "+s.n+" "+c[i]+" รายการ").join(" · ")}<br>ความครบถ้วนโดยรวม ${pct(c[0],app)}% ของรายการที่เกี่ยวข้อง</p>
+<h3>5. รายชื่อครูที่ส่งงานครบ (${ok.length} คน)</h3><p>${ok.map(i=>T[i]).join(", ")||"-"}</p>
+<h3>6. รายชื่อครูที่ยังมีรายการค้าง (${pd.length} คน)</h3><p>${pd.map(i=>T[i]).join(", ")||"-"}</p>
+<h3>7. รายการงานที่ยังไม่ครบถ้วน (${miss.length} รายการ)</h3>${miss.length?"<ul>"+miss.map(m=>`<li>${esc(m)}</li>`).join("")+"</ul>":"<p>-</p>"}
+<h3>8. ข้อสังเกต/หมายเหตุ</h3>${notes.length?"<ul>"+notes.map(m=>`<li>${esc(m)}</li>`).join("")+"</ul>":"<p>-</p>"}
+<h3>9. สรุปผลภาพรวม</h3><p>ครูส่งงานครบ ${ok.length} จาก ${T.length} คน มีงานที่ต้องติดตามอีก ${miss.length} รายการ ความครบถ้วนโดยรวม ${pct(c[0],app)}% ทั้งนี้เป็นการตรวจสอบความครบถ้วนของเอกสารเพื่อการติดตามงาน มิได้เป็นการประเมินหรือจัดอันดับครู</p>
+<div class="tools"><button onclick="window.print()">พิมพ์ / บันทึกเป็น PDF</button><button class="o" onclick="$('rp').classList.remove('on')">ปิดรายงาน</button></div>`}
+$("rb").onclick=()=>{rep();$("rp").classList.add("on");$("rp").scrollIntoView({behavior:"smooth"})};
+function clr(){$("imr").textContent="";$("imj").value="";$("ms").textContent="";["cards","ch1","ch2","mx","fl","rp"].forEach(id=>$(id).innerHTML="");$("rp").classList.remove("on")}
+function tv(i,x){
+const a=x.s.filter(v=>v!=2).length,d=x.s.filter(v=>v==0).length,ok=!x.s.includes(1);
+$("teacher").innerHTML=`<div class="tc"><div class="tn">${T[i]}</div><p style="color:var(--mu);margin:4px 0 10px">สถานะการส่งงาน ก่อนปิด${tlab()}</p>
+<span class="tag" style="background:${ok?"var(--ok)":"var(--gold)"};font-size:14px;padding:5px 12px">${ok?"ส่งครบแล้ว":"มีรายการที่ต้องส่ง"}</span> <span style="color:var(--mu)">ส่งแล้ว ${d} จาก ${a} รายการที่เกี่ยวข้อง</span></div>
+<div class="tc">${K.map((k,j)=>`<div class="row"><span>${j+1}. ${k}</span><span class="tag" style="background:${ST[x.s[j]].c}">${ST[x.s[j]].e} ${ST[x.s[j]].n}</span></div>`).join("")}</div>
+${x.n?`<div class="tc"><b>หมายเหตุ</b><p style="margin:6px 0 0">${esc(x.n)}</p></div>`:""}
+${pjteach(i,x.pj)}${myev(i,x)}<p style="color:var(--mu);font-size:13px">หน้านี้สำหรับดูข้อมูลเท่านั้น หากข้อมูลไม่ถูกต้องโปรดแจ้งผู้บริหาร</p>
+<div class="bt"><button onclick="show('home')">กลับหน้าหลัก</button></div>`}
+let TK=0;
+async function ld(i){const k=++TK,bt='<div class="bt"><button onclick="show(\'home\')">กลับหน้าหลัก</button></div>';
+$("teacher").innerHTML='<div class="tc">กำลังโหลดข้อมูล...</div>'+bt;
+try{const [r,v,pj]=await Promise.all([api({a:"teacher",r:i}),api({a:"events"}).catch(()=>null),api({a:"pjall"}).catch(()=>null)]);if(!r.ok)throw 0;if(k===TK&&!$("teacher").hidden)tv(i,{s:r.s,n:r.n,ev:v&&v.ok?v.ev:null,pj:pj&&pj.ok?pj.P:null})}
+catch(e){if(k===TK)$("teacher").innerHTML='<div class="tc">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</div>'+bt}}
+let ADM=false;
+function show(v,i){if(v=="admin"&&!ADM)v="home";["home","teacher","admin","sched","proj"].forEach(x=>$(x).hidden=x!=v);
+if(v!="admin")clr();if(v!="teacher")$("teacher").innerHTML="";
+CUR=v;if(v=="teacher")PI=i;if(v=="admin")all();if(v=="sched")sch();if(v=="proj")pjopen();if(v=="teacher")ld(i);else TK++;if(v=="home"){$("pick").value="";$("pw").value="";$("er").textContent="";$("lg").hidden=true}
+if(window.scrollTo)window.scrollTo(0,0)}
+$("pick").onchange=()=>{if($("pick").value!=="")show("teacher",+$("pick").value)};
+$("toadm").onclick=()=>{$("lg").hidden=false;$("pw").focus()};
+async function login(){const p=$("pw").value;$("er").textContent="กำลังตรวจสอบ...";
+try{const r=await api({a:"all",pw:p});if(r.ok){if(r.teachers){T=r.teachers;fillT()}S=r.S;N=r.N;PWD=p;ADM=true;show("admin")}else{$("er").textContent=r.err==="auth"?"รหัสผ่านไม่ถูกต้อง":"เกิดข้อผิดพลาด กรุณาลองใหม่";$("pw").value=""}}
+catch(e){$("er").textContent=e.message==="cfg"?"ยังไม่ได้ตั้งค่าที่อยู่ฐานข้อมูล (API)":"เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาลองใหม่"}}
+$("lgo").onclick=login;$("pw").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+$("lgx").onclick=()=>{ADM=false;PWD="";S=[];N=[];show("home")};
+$("rfb").onclick=async()=>{try{const r=await api({a:"all",pw:PWD});if(!r.ok)throw 0;S=r.S;N=r.N;all();msg("")}catch(e){msg("โหลดข้อมูลไม่สำเร็จ")}};
+$("imb").onclick=async()=>{let d;try{d=JSON.parse($("imj").value)}catch(e){$("imr").textContent="ข้อมูลไม่ถูกต้อง ต้องเป็นข้อความที่คัดลอกจากระบบเดิม";return}
+if(!confirm("ยืนยันนำเข้าข้อมูลเดิมเข้าฐานข้อมูลกลาง? ทำได้ครั้งเดียว และระบบจะสำรองข้อมูลในชีตก่อนเสมอ"))return;
+try{const r=await api({a:"import",pw:PWD,d:{S:d.S,N:d.N}});if(!r.ok)throw r;const g=await api({a:"all",pw:PWD});S=g.S;N=g.N;all();$("imr").textContent="นำเข้าสำเร็จ"}
+catch(e){$("imr").textContent=e&&e.err==="imported"?"มีการนำเข้าไว้แล้ว ระบบจึงไม่เขียนทับ":"นำเข้าไม่สำเร็จ ตรวจสอบรูปแบบข้อมูล"}};
+
+const MN=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],MS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."],WD=["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."],WC=["#f4b6b6","#fbe38a","#f3b9d1","#b9e6b0","#f7c38e","#a9e4ee","#c6b8e6"];
+let EV=[],SY=new Date().getFullYear(),SM=new Date().getMonth(),SMODE="c",SDAY="",PV={v:"home",i:0};
+const pad=n=>String(n).padStart(2,"0"),iso=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const todayS=()=>{const t=new Date();return iso(t.getFullYear(),t.getMonth(),t.getDate())};
+const fd=s=>{const[y,m,d]=s.split("-").map(Number);return `${d} ${MS[m-1]} ${String(y+543).slice(2)}`};
+const wd=s=>new Date(s+"T00:00:00").getDay();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sn=n=>"ครู"+n.replace(/^(นางสาว|นาย|นาง)/,"").split(" ")[0];
+const who=e=>[e.x,e.a.includes("ALL")?"ครูทุกคน":e.a.map(sn).join(", ")].filter(Boolean).join(" + ");
+const mine=e=>$("swho").value===""||e.a.includes("ALL")||e.a.includes(T[+$("swho").value]);
+const evOn=s=>EV.filter(e=>e.d===s&&mine(e)).sort((a,b)=>a.t.localeCompare(b.t));
+const dueOn=s=>EV.filter(e=>e.u===s&&mine(e));
+function fillT(){const p=$("pick"),w=$("swho");p.innerHTML="";w.innerHTML="";p.add(new Option("เลือกชื่อครูเพื่อดูข้อมูลของตนเอง",""));w.add(new Option("ทุกคน (ภาพรวม)",""));T.forEach((n,i)=>{p.add(new Option(n,i));w.add(new Option(n,i))})}
+function tlab(){const[a,b]=TERM.split("/");return `ภาคเรียนที่ ${a} ปีการศึกษา ${b}`}
+function updTL(){$("tl1").textContent="ก่อนปิด"+tlab();$("tl2").textContent="ก่อนปิด"+tlab()}
+function fillTerm(){const s=$("term");s.innerHTML="";TERMS.forEach(l=>s.add(new Option("ภาคเรียนที่ "+l,l)));s.value=TERM}
+function goS(v,i){PV={v,i};$("swho").value=v=="teacher"?String(i):"";show("sched")}
+function myev(i,x){let h='<div class="tc"><b>งานที่ได้รับมอบหมาย (ที่จะถึง)</b>';
+if(!x.ev)h+='<p style="color:var(--mu)">ไม่สามารถโหลดตารางงานได้</p>';
+else{const ts=todayS(),L=x.ev.filter(e=>(e.a.includes("ALL")||e.a.includes(T[i]))&&(e.d>=ts||(e.u&&e.u>=ts))).sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t)).slice(0,8);
+h+=L.length?L.map(e=>`<div class="row" style="align-items:flex-start"><span><span class="wc" style="background:${WC[wd(e.d)]}">${WD[wd(e.d)]}</span> ${fd(e.d)} ${esc(e.t)}<br><b>${esc(e.n)}</b>${e.p?`<br><small>${esc(e.p)}</small>`:""}</span>${e.u?`<span class="tag" style="background:var(--gold)">ส่ง ${fd(e.u)}</span>`:""}</div>`).join(""):'<p style="color:var(--mu)">ไม่มีงานที่ได้รับมอบหมายในช่วงต่อไป</p>'}
+return h+`<div class="bt"><button class="o" onclick="goS('teacher',${i})">ดูตารางงานและปฏิทิน</button></div></div>`}
+function cal(){const first=new Date(SY,SM,1).getDay(),dim=new Date(SY,SM+1,0).getDate(),td=todayS();
+let h=WD.map(w=>`<div class="ch">${w}</div>`).join("");
+for(let i=0;i<first;i++)h+='<div class="cc o"></div>';
+for(let d=1;d<=dim;d++){const s=iso(SY,SM,d),a=evOn(s),u=dueOn(s);
+h+=`<div class="cc${s===td?" td":""}${s===SDAY?" sel":""}" onclick="sday('${s}')"><b>${d}</b>${a.length+u.length?`<br><span class="bd">${a.length+u.length}</span>`:""}${a.slice(0,2).map(e=>`<div class="ev">${esc(e.n)}</div>`).join("")}${u.length?`<div class="ev du">ส่ง ${u.length}</div>`:""}${a.length>2?`<div class="mo">+${a.length-2}</div>`:""}</div>`}
+return `<div class="cg">${h}</div>`}
+function tbl(){const p=iso(SY,SM,1).slice(0,7),L=EV.filter(e=>e.d.startsWith(p)&&mine(e)).sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
+if(!L.length)return '<p style="color:var(--mu)">ไม่มีรายการในเดือนนี้</p>';
+return `<div class="w"><table id="st"><thead><tr><th>วัน/เดือน/ปี</th><th>เวลา</th><th>รายการ</th><th>ผู้ปฏิบัติ</th><th>สถานที่</th><th>กำหนดส่ง</th><th>หมายเหตุ</th>${ADM?"<th></th>":""}</tr></thead><tbody>`+L.map(e=>`<tr><td data-l="วันที่"><span class="wc" style="background:${WC[wd(e.d)]}">${WD[wd(e.d)]}</span> ${fd(e.d)}</td><td data-l="เวลา">${esc(e.t)}</td><td data-l="รายการ" style="text-align:left">${esc(e.n)}</td><td data-l="ผู้ปฏิบัติ">${esc(who(e))}</td><td data-l="สถานที่">${esc(e.p)}</td><td data-l="กำหนดส่ง">${e.u?fd(e.u):""}</td><td data-l="หมายเหตุ">${esc(e.m)}</td>${ADM?`<td><button class="o" onclick="evedit('${e.id}')">แก้ไข</button></td>`:""}</tr>`).join("")+"</tbody></table></div>"}
+function sday(s){SDAY=s;const a=evOn(s),u=dueOn(s);if(SMODE=="c")$("svw").innerHTML=cal();$("sdy").hidden=false;
+$("sdy").innerHTML=`<h2><span class="wc" style="background:${WC[wd(s)]}">${WD[wd(s)]}</span> ${fd(s)}</h2>`+(a.length?a.map(e=>`<div class="row" style="align-items:flex-start"><span><b>${esc(e.n)}</b><br><small>${esc(e.t)} ${esc(e.p)}<br>ผู้ปฏิบัติ: ${esc(who(e))}${e.m?"<br>หมายเหตุ: "+esc(e.m):""}</small></span>${ADM?`<button class="o" onclick="evedit('${e.id}')">แก้ไข</button>`:""}</div>`).join(""):'<p style="color:var(--mu)">ไม่มีรายการ</p>')+(u.length?'<b>ครบกำหนดส่งวันนี้</b>'+u.map(e=>`<div class="row"><span>${esc(e.n)}</span></div>`).join(""):"")+(ADM?`<div class="bt"><button onclick="evform({d:'${s}',t:'',n:'',a:[],x:'',p:'',u:'',m:'',id:''})">+ เพิ่มรายการในวันนี้</button></div>`:"")}
+function draw(){$("sttl").textContent=`${MN[SM]} ${SY+543}`;$("svw").innerHTML=SMODE=="c"?cal():tbl();$("sdy").hidden=!(SMODE=="c"&&SDAY.startsWith(iso(SY,SM,1).slice(0,7)));if(!$("sdy").hidden)sday(SDAY)}
+async function sch(){$("evb").hidden=!ADM;$("evf").hidden=true;$("sdy").hidden=true;$("sttl").textContent=`${MN[SM]} ${SY+543}`;$("svw").innerHTML="กำลังโหลด...";
+try{const r=await api({a:"events"});if(!r.ok)throw 0;EV=r.ev;draw()}catch(e){$("svw").innerHTML="ไม่สามารถโหลดตารางงานได้ กรุณาลองใหม่"}}
+function evform(e){if(!ADM)return;e=e||{d:SDAY||iso(SY,SM,1),t:"",n:"",a:[],x:"",p:"",u:"",m:"",id:""};const all=e.a.includes("ALL");$("evf").hidden=false;
+$("evf").innerHTML=`<h2>${e.id?"แก้ไขรายการ":"เพิ่มรายการ"}</h2><div class="fg"><label>วันที่<input type="date" id="ef_d" value="${e.d}"></label><label>เวลา<input id="ef_t" value="${esc(e.t)}" placeholder="เช่น 09.00-16.30"></label><label class="wd">รายการ<input id="ef_n" value="${esc(e.n)}"></label>
+<div class="wd"><b>ผู้ปฏิบัติ</b><br><label class="ck"><input type="checkbox" id="ef_a" ${all?"checked":""}> ครูทุกคน</label>${T.map((n,i)=>`<label class="ck"><input type="checkbox" id="ef_i${i}" ${e.a.includes(n)?"checked":""}> ${esc(n)}</label>`).join("")}</div>
+<label>ผู้ปฏิบัติอื่น (เช่น ผู้บริหาร)<input id="ef_x" value="${esc(e.x)}"></label><label>สถานที่<input id="ef_p" value="${esc(e.p)}"></label><label>กำหนดส่ง (ถ้ามี)<input type="date" id="ef_u" value="${e.u}"></label><label class="wd">หมายเหตุ / รายละเอียดเพิ่มเติม<textarea id="ef_m" rows="3" style="width:100%;font:inherit;padding:7px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)">${esc(e.m)}</textarea></label></div>
+<div class="bt"><button onclick="evsave('${e.id}')">บันทึก</button><button class="o" onclick="$('evf').hidden=true">ยกเลิก</button>${e.id?`<button class="o" style="color:var(--no);border-color:var(--no)" onclick="evdelete('${e.id}')">ลบรายการ</button>`:""}</div><div id="evm" style="color:var(--no)"></div>`;
+if($("evf").scrollIntoView)$("evf").scrollIntoView({behavior:"smooth"})}
+function evedit(id){const e=EV.find(x=>x.id===id);if(e)evform(Object.assign({},e,{a:e.a.slice()}))}
+async function evsave(id){const g=k=>$("ef_"+k).value,e={d:g("d"),t:g("t"),n:g("n"),a:$("ef_a").checked?["ALL"]:T.filter((_,i)=>$("ef_i"+i).checked),x:g("x"),p:g("p"),u:g("u"),m:g("m")};
+if(!e.d||!e.n.trim()){$("evm").textContent="กรุณากรอกวันที่และรายการ";return}
+if(!e.a.length&&!e.x.trim()){$("evm").textContent="กรุณาเลือกผู้ปฏิบัติ";return}
+try{const r=await api(id?{a:"evedit",pw:PWD,id,e}:{a:"evadd",pw:PWD,e});if(!r.ok)throw 0;$("evf").hidden=true;SDAY=e.d;const[y,m]=e.d.split("-").map(Number);SY=y;SM=m-1;await sch()}catch(x){$("evm").textContent="บันทึกไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองใหม่"}}
+async function evdelete(id){if(!confirm("ยืนยันลบรายการนี้?"))return;try{const r=await api({a:"evdel",pw:PWD,id});if(!r.ok)throw 0;$("evf").hidden=true;await sch()}catch(e){$("evm").textContent="ลบไม่สำเร็จ กรุณาลองใหม่"}}
+async function reload(){try{const r=await api({a:"all",pw:PWD});if(!r.ok)throw 0;if(r.teachers){T=r.teachers;fillT()}S=r.S;N=r.N;all();msg("")}catch(e){msg("โหลดข้อมูลไม่สำเร็จ")}}
+$("rfb").onclick=reload;
+$("swho").onchange=()=>{SDAY="";draw()};
+$("tosch").onclick=()=>goS("home");$("adsch").onclick=()=>goS("admin");$("sbk").onclick=()=>show(PV.v,PV.i);$("evb").onclick=()=>evform();
+const mv=d=>{SM+=d;if(SM<0){SM=11;SY--}if(SM>11){SM=0;SY++}SDAY="";draw()};
+$("spv").onclick=()=>mv(-1);$("snx").onclick=()=>mv(1);$("std").onclick=()=>{const t=new Date();SY=t.getFullYear();SM=t.getMonth();SDAY="";draw()};
+$("sc").onclick=()=>{SMODE="c";draw()};$("sb").onclick=()=>{SMODE="t";draw()};
+$("term").onchange=()=>{TERM=$("term").value;updTL();if(CUR=="teacher")ld(PI);else if(CUR=="admin")reload()};
+$("tab").onclick=async()=>{const l=$("tn").value.trim();if(!/^[123]\/25\d\d$/.test(l)){msg("รูปแบบภาคเรียนไม่ถูกต้อง ตัวอย่าง 2/2569");return}
+if(!confirm("ยืนยันเพิ่มภาคเรียน "+l+"? ข้อมูลภาคเรียนเดิมจะไม่เปลี่ยน"))return;
+try{const r=await api({a:"termadd",pw:PWD,l});if(!r.ok)throw r;TERMS=r.terms;TERM=l;fillTerm();updTL();$("tn").value="";await reload()}catch(e){msg(e&&e.err==="exists"?"มีภาคเรียนนี้แล้ว":"เพิ่มภาคเรียนไม่สำเร็จ")}};
+fillT();
+(async()=>{try{const r=await api({a:"terms"});if(r.ok&&r.terms.length){TERMS=r.terms;TERM=TERMS[TERMS.length-1]}}catch(e){}
+try{const q=await api({a:"teachers"});if(q.ok&&q.teachers.length){T=q.teachers}}catch(e){}fillT();fillTerm();updTL()})();
+$("tba").onclick=async()=>{const nm=$("tnm").value.trim();if(nm.length<3){msg("กรุณากรอกชื่อครูให้ครบ");return}
+if(!confirm("ยืนยันเพิ่มครู: "+nm+" ? จะเพิ่มแถวในทุกภาคเรียน ข้อมูลเดิมไม่เปลี่ยน"))return;
+try{const r=await api({a:"teacheradd",pw:PWD,name:nm});if(!r.ok)throw r;T=r.teachers;fillT();$("tnm").value="";await reload();msg("เพิ่มครูเรียบร้อย")}catch(e){msg(e&&e.err==="exists"?"มีชื่อนี้อยู่แล้ว":"เพิ่มครูไม่สำเร็จ ตรวจสอบชื่อแล้วลองใหม่")}};
+const PJG=["ยุทธศาสตร์ที่ 1 พัฒนาผู้เรียนให้มีคุณภาพตามมาตรฐานการศึกษาชาติ และมีทักษะในศตวรรษที่ ๒๑", "ยุทธศาสตร์ที่ 2 พัฒนาผู้เรียนให้มีคุณธรรม จริยธรรมในการดำรงชีวิตตามหลักปรัชญาของเศรษฐกิจพอเพียง", "ยุทธศาสตร์ที่ 3 พัฒนาผู้เรียนให้เป็นผู้ที่มีคุณลักษณะอันพึงประสงค์ตามสถานศึกษากำหนด", "ยุทธศาสตร์ที่ 4 พัฒนาการจัดการเรียนการสอน โดยใช้เทคโนโลยีดิจิทัลอย่างสร้างสรรค์", "ยุทธศาสตร์ที่ 5 พัฒนากระบวนการบริหาร ด้วยระบบการบริหารงานแบบมีส่วนร่วม", "ยุทธศาสตร์ที่ 6 พัฒนาการจัดการศึกษาตามนโยบายกรุงเทพมหานคร", "มาตรฐานการศึกษาปฐมวัย"];
+const PJSEED=[["ว1/2568","1. โครงการเข้าค่ายการเรียนรู้และนิทรรศการ วิชาการ",0,0,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","1/2569",0],["ว2/2568","2. โครงการพัฒนาศักยภาพของผู้เรียนตาม กลุ่มสาระการเรียนรู้",0,0,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","",1],["ว3/2568","3. โครงการส่งเสริมนิสัยรักการอ่าน",0,0,"นางสาวสุภาพร แก้วหานาม","",1],["ว3/2568","3.1 กิจกรรมบันทึกรักการอ่าน",1,0,"นางสาวสุภาพร แก้วหานาม","",1],["ว3/2568","3.2 กิจกรรมชวนน้องอ่าน",1,0,"นางสาวสุภาพร แก้วหานาม","",1],["ว3/2568","3.3 กิจกรรมภาษาไทยวันละคำ",1,0,"นางสาวสุภาพร แก้วหานาม","",1],["ว3/2568","3.4 กิจกรรมวันสุนทรภู่",1,0,"นางสาวสุภาพร แก้วหานาม","",1],["ว3/2568","3.5 กิจกรรมสัปดาห์ห้องสมุด",1,0,"นางสาวสุภาพร แก้วหานาม","",1],["ท1/2568","4. โครงการโรงเรียนส่งเสริมสุขภาพสู่สากล",0,0,"นางสาวสุภาพร พิลึก","",1],["ท1/2568","4.1 กิจกรรมตรวจสุขภาพนักเรียน",1,0,"นางสาวสุภาพร พิลึก","",1],["ท1/2568","4.2 กิจกรรมออกกำลังกายเด็กไทยไร้พุง",1,0,"นางสาวสุภาพร พิลึก","",1],["ท1/2568","4.3 กิจกรรม อย.น้อย",1,0,"นางสาวสุภาพร พิลึก","",1],["ท2/2568","5. โครงการศึกษาการเรียนรู้ตามหลักปรัชญา ของเศรษฐกิจพอเพียง",0,0,"นายภูวนาท สีราชเลา","",1],["ท3/2568","6. โครงการวันสำคัญของชาติ และ พระมหากษัตริย์",0,1,"นางสาววรีรัตน์ มลิวัลย์","",1],["ท3/2568","6.1 กิจกรรมวันเฉลิมพระชนมพรรษา พระราชินี",1,1,"นางสาววรีรัตน์ มลิวัลย์","1/2569",0],["ท3/2568","6.2 กิจกรรมวันสถาปนาลูกเสือ",1,1,"นางสาวสุภาพร พิลึก","1/2569",0],["ท3/2568","6.3 กิจกรรมวันเฉลิมพระชนมพรรษา ร.10",1,1,"นางสาวสุภาพร พิลึก","1/2569",0],["ท3/2568","6.4 กิจกรรมวันแม่ แห่งชาติ",1,1,"นางสาวทัศนา นพพลกรัง","",1],["ท3/2568","6.5 กิจกรรมวันมหาธีรราชเจ้า",1,1,"นายวีรพล สุขดิบ","",1],["ท3/2568","6.6 กิจกรรมจิตอาสาพระราชทาน",1,1,"นางสาวอรณิชา อินต๊ะสอน","",1],["ท3/2568","6.7 กิจกรรมวันพ่อแห่งชาติ วันชาติไทย และ วันดินโลก",1,1,"นายวีรพล สุขดิบ","",1],["ท4/2568","7. โครงการวันสำคัญทางศาสนา",0,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท4/2568","7.1 กิจกรรมวันมาฆบูชา",1,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท4/2568","7.2 กิจกรรมวันวิสาขบูชา",1,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท4/2568","7.3 กิจกรรมวันอาสาฬบูชา และวันเข้าพรรษา",1,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท4/2568","7.4 กิจกรรมวันลอยกระทง",1,1,"นางเกษร จันทะเวช","",1],["ท5/2568","8. โครงการส่งเสริมคุณธรรม จริยธรรมในสถานศึกษา",0,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท5/2568","8.1 กิจกรรมพัฒนาคุณธรรม จริยธรรม",1,1,"นายมงคลพิพัฒน์ ปิ่นแก้ว","",1],["ท5/2568","8.2 กิจกรรมวันไหว้ครู",1,1,"นางสาวอรณิชา อินต๊ะสอน","1/2569",0],["ท6/2568","9. โครงการส่งเสริมประชาธิปไตยในสถานศึกษา",0,1,"นางสาวทัศนา นพพลกรัง","1/2569",0],["ท7/2568","10. โครงการส่งเสริม พัฒนา กิจกรรมผู้เรียน และระบบดูแล ช่วยเหลือนักเรียนในสถานศึกษา",0,2,"นางเกษร จันทะเวช","",1],["ท7/2568","10.1 กิจกรรมเข้าค่ายและเดินทางไกลลูกเสือ - ยุวกาชาด",1,2,"นางจุฑามาศ อาจวิชิต","1/2569",0],["ท7/2568","10.2 กิจกรรมเข้าประจำหมู่ยุวกาชาด และมอบเข็มยุวกาชาด",1,2,"นางจุฑามาศ อาจวิชิต","1/2569",0],["ท7/2568","10.3 กิจกรรมเยี่ยมบ้านนักเรียน",1,2,"นางเกษร จันทะเวช","",1],["ท7/2568","10.4 กิจกรรมกีฬาสี",1,2,"นายธันวา ทับอินทร์","",1],["ท7/2568","10.5 กิจกรรมวันเด็กแห่งชาติ",1,2,"นายวีรพล สุขดิบ","",1],["ท7/2568","10.6 กิจกรรมปัจฉิมนิเทศ",1,2,"นางสาวอรณิชา อินต๊ะสอน","",1],["ท7/2568","10.7 กิจกรรมมอบทุนการศึกษา",1,2,"นางเกษร จันทะเวช","",1],["บ1/2568","11. โครงการส่งเสริมพัฒนาศักยภาพครู",0,3,"นางสาวนันทนา กรินตา","",1],["บ1/2568","11.1 กิจกรรมการจัดการเรียนการสอน และ การใช้เทคโนโลยี",1,3,"นายวรปรัชญ์ วัฒนศิลป์","",1],["บ1/2568","11.2 กิจกรรมนิเทศภายในแบบ PLC สู่ SLC",1,3,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","",1],["บ1/2568","11.3 กิจกรรมวิจัยในชั้นเรียน",1,3,"นางสาวนันทนา กรินตา","",1],["บ1/2568","11.4 กิจกรรมการผลิตสื่อการเรียนการสอน ของครู",1,3,"นางสาวทัศนา นพพลกรัง","",1],["บ1/2568","11.5 กิจกรรมส่งเสริมพัฒนาการเรียนรู้ในห้องเรียนดิจิทัล",1,3,"นายวรปรัชญ์ วัฒนศิลป์","",1],["บ1/2568","11.6 กิจกรรมพัฒนาอบรม สัมมนา ข้าราชการครู และ บุคลากร",1,3,"นางจุฑามาศ อาจวิชิต","",1],["บ1/2568","11.7 กิจกรรมสร้างขวัญและกำลังใจครู และบุคลากร",1,3,"นางจุฑามาศ อาจวิชิต","",1],["ว4/2568","12. โครงการประกันคุณภาพภายในสถานศึกษา",0,4,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","",1],["ว5/2568","13. โครงการตรวจสอบและพัฒนาหลักสูตรสถานศึกษา",0,4,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","1/2569",0],["ท8/2568","14. โครงการพัฒนาสภาพแวดล้อมของสถานศึกษา",0,4,"นายภูวนาท สีราชเลา","",1],["ท8/2568","14.1 กิจกรรมห้องเรียนสะอาด บรรยากาศวิชาการสู่ การเรียนรู้แบบ CCE",1,4,"นายภูวนาท สีราชเลา","",1],["ท8/2568","14.2 กิจกรรม Big Cleaning Day",1,4,"นายภูวนาท สีราชเลา","",1],["ท9/2568","15. โครงการสถานศึกษาปลอดภัย",0,4,"นายธันวา ทับอินทร์","",1],["ท9/2568","15.1 กิจกรรมซักซ้อมตามแผนเผชิญเหตุ (อัคคีภัย แผ่นดินไหว เหตุฉุกเฉิน และอุบัติภัยทางน้ำ)",1,4,"นายธันวา ทับอินทร์","",1],["ท9/2568","15.2 กิจกรรมอบรมจราจร",1,4,"นายธันวา ทับอินทร์","",1],["ท9/2568","15.3 กิจกรรมปฐมพยาบาลเบื้องต้น",1,4,"นายธันวา ทับอินทร์","",1],["ง1/2568","16. โครงการประชุมคณะกรรมการสถานศึกษาขั้นพื้นฐาน เครือข่ายผู้ปกครองนักเรียน และผู้เกี่ยวข้อง",0,4,"นางสาวอรณิชา อินต๊ะสอน","",1],["ท10/2568","17. โครงการสานสัมพันธ์บ้าน วัด โรงเรียน",0,4,"นางเกษร จันทะเวช","",1],["ท11/2568","18. โครงการพัฒนาระบบสารสนเทศ และสื่อประชาสัมพันธ์ของสถานศึกษา BSIS BMIS",0,4,"นายวีรพล สุขดิบ / นายวรปรัชญ์ วัฒนศิลป์","",1],["ท12/2568","19. โครงการโรงเรียนปลอดขยะ (ZERO WASTE SCHOOL)",0,4,"นายภูวนาท สีราชเลา","",1],["ง2/2568","20. โครงการงานนโยบายการศึกษากรุงเทพมหานคร (โครงการเรียนดี เรียนฟรี อย่างมีคุณภาพ)",0,5,"นางสาวอรณิชา อินต๊ะสอน","",1],["ง3/2568","21. โครงการห้องเรียนในโลกกว้าง",0,5,"นางจุฑามาศ อาจวิชิต","1/2569",0],["ง4/2568","22. โครงการเล่นน้ำได้ ว่ายน้ำเป็น",0,5,"นายธันวา ทับอินทร์","1/2569",0],["ง5/2568","23. โครงการห้องเรียน Maker Space",0,5,"นางสาวสุภาพร พิลึก","",1],["ท13/2568","24. โครงการป้องกันและแก้ไขปัญหายาเสพติด TO BE NUMBER ONE",0,5,"นายวีรพล สุขดิบ / นางเกษร จันทะเวช","",1],["ท13/2568","24.1 กิจกรรมดนตรีปลุกใจต้านภัยยาเสพติด",1,5,"นายวีรพล สุขดิบ","",1],["ท13/2568","24.2 กิจกรรมกีฬาต้านภัยยาเสพติด",1,5,"นายธันวา ทับอินทร์","",1],["ท13/2568","24.3 กิจกรรม DANCERCISE",1,5,"นางสาวศิญาภัสร์ บวรรังสีพัชร์","",1],["ท13/2568","24.4 กิจกรรมศูนย์เพื่อนใจ TO BE NUMBER ONE",1,5,"นางสาวทัศนา นพพลกรัง","",1],["ง6/2568","25. โครงการเกษตรปลอดสารพิษ",0,5,"นางจุฑามาศ อาจวิชิต","",1],["ง7/2568","26. โครงการเด็กยิ้มอิ่มท้อง",0,5,"นางสาวสุภาพร แก้วหานาม","",1],["ง8/2568","27. โครงการอาหารกลางวัน",0,5,"นางสาวสุภาพร แก้วหานาม","",1],["ง9/2568","28. โครงการเปิดโลกกว้างสร้างเส้นทางสู่อาชีพ",0,5,"นางสาวนันทนา กรินตา","1/2569",0],["","29. โครงการทำบุญทอดผ้าป่าเพื่อการศึกษา2569",0,5,"นางสาวอรณิชา อินต๊ะสอน","1/2569",0],["ป1/2568","1. โครงการส่งเสริมพัฒนาการระดับปฐมวัย",0,6,"นางสาววรีรัตน์ มลิวัลย์","",1],["ป2/2568","2. โครงการบ้านนักวิทยาศาสตร์น้อย",0,6,"นางสาววรีรัตน์ มลิวัลย์","",1],["ป3/2568","3. โครงการบัณฑิตน้อย",0,6,"นางสาววรีรัตน์ มลิวัลย์","",1]];
+
+/* ===== ติดตามโครงการ/กิจกรรม และการส่งรายงาน ===== */
+const PY="2569",PTERMS=["1/"+PY,"2/"+PY];
+let P=null,PPV={v:"home",i:0},PEDIT=false;
+const nk=n=>String(n||"").replace(/^\s*(นางสาว|นาง|นาย)/,"").replace(/\s+/g," ").trim();
+const own=p=>String(p.o||"").split("/").map(s=>s.trim()).filter(Boolean);
+const isMine=(p,key)=>own(p).some(o=>nk(o)===key);
+const kd=p=>p.k==1?"กิจกรรม":"โครงการ";
+function people(){const m=new Map();T.forEach(n=>m.set(nk(n),n));const L=[];(P||[]).forEach(p=>own(p).forEach(o=>{const k=nk(o);if(!L.some(x=>x[0]===k))L.push([k,m.get(k)||o])}));return L}
+function pjgroups(){const L=[];PJG.forEach(g=>L.push(g));(P||[]).forEach(p=>{if(p.g&&!L.includes(p.g))L.push(p.g)});return L}
+const pdate=s=>s&&/^\d{4}-\d\d-\d\d$/.test(s)?fd(s):esc(s||"");
+async function pjload(){const r=await api({a:"pjall"});if(!r.ok)throw r;P=r.P||[];return P}
+function goP(v,i,key){PPV={v,i};show("proj");if(key!==undefined)PWK=key}
+let PWK="";
+async function pjopen(){$("padd").hidden=!ADM;$("pfm").hidden=true;$("pmsg").textContent="";$("pjt").innerHTML="<tr><td>กำลังโหลด...</td></tr>";$("pcards").innerHTML="";
+try{await pjload()}catch(e){$("pjt").innerHTML='<tr><td>ไม่สามารถโหลดข้อมูลโครงการได้ กรุณาลองใหม่</td></tr>';if(e&&e.err==="nosheet"||e&&e.err==="bad")$("pmsg").textContent="ยังไม่ได้ติดตั้งส่วนโครงการในฐานข้อมูล (Apps Script)";return}
+const w=$("pwho");w.innerHTML="";w.add(new Option("ทุกคน (ภาพรวม)",""));people().forEach(([k,n])=>w.add(new Option(n,k)));w.value=PWK;if(w.value!==PWK)w.value="";
+const g=$("pgr"),gv=g.value;g.innerHTML="";g.add(new Option("ทุกยุทธศาสตร์",""));pjgroups().forEach(x=>g.add(new Option(x.length>60?x.slice(0,58)+"…":x,x)));g.value=gv;
+if(!P.length)$("pmsg").textContent=ADM?"ยังไม่มีรายการโครงการ — ไปที่หน้า admin แล้วกด \"นำเข้ารายการโครงการ\"":"ยังไม่มีรายการโครงการ";
+pjdraw()}
+function pjfilter(){const w=$("pwho").value,s=$("pst").value,g=$("pgr").value,q=$("pq").value.trim();
+return P.filter(p=>(!w||isMine(p,w))&&(s===""||String(p.s)===s)&&(!g||p.g===g)&&(!q||(p.n+" "+p.c+" "+p.o).includes(q)))}
+function pstat(L){const c={all:L.length,pj:L.filter(p=>p.k!=1).length,ac:L.filter(p=>p.k==1).length,t1:L.filter(p=>p.f===PTERMS[0]).length,t2:L.filter(p=>p.f===PTERMS[1]).length,ok:L.filter(p=>p.s==0).length};c.no=c.all-c.ok;c.pc=pct(c.ok,c.all);return c}
+function pjdraw(){if(!P)return;const w=$("pwho").value,base=w?P.filter(p=>isMine(p,w)):P,c=pstat(base),L=pjfilter();PWK=w;
+$("pcards").innerHTML=[["รายการทั้งหมด",c.all+" รายการ",`${c.pj} โครงการ · ${c.ac} กิจกรรม`],["เสร็จสิ้นภาคเรียนที่ "+PTERMS[0],c.t1+" รายการ"],["เสร็จสิ้นภาคเรียนที่ "+PTERMS[1],c.t2+" รายการ"],["ส่งรายงานแล้ว",c.ok+" รายการ"],["ยังไม่ส่งรายงาน",c.no+" รายการ"],["ความครบถ้วนการส่งรายงาน",c.pc+"%"]].map(x=>`<div class="c"><small>${x[0]}</small><b>${x[1]}</b>${x[2]?`<div class="pg">${x[2]}</div>`:""}</div>`).join("");
+$("pov").hidden=!!w;$("pme").hidden=!w;
+if(!w){bars("pch",pjgroups().map(g=>{const a=P.filter(p=>p.g===g),d=a.filter(p=>p.s==0).length;return[g.replace(/^(ยุทธศาสตร์ที่ \d+).*/,"$1"),d+"/"+a.length,pct(d,a.length),"var(--g)"]}).filter(r=>!r[1].endsWith("/0")));
+$("ppt").innerHTML="<tr><th>ผู้รับผิดชอบ</th><th>รับผิดชอบ</th><th>ส่งแล้ว</th><th>ยังไม่ส่ง</th><th>%</th></tr>"+people().map(([k,n])=>{const a=P.filter(p=>isMine(p,k)),d=a.filter(p=>p.s==0).length;return`<tr onclick="pjwho('${k.replace(/'/g,"")}')"><td>${esc(n)}</td><td>${a.length}</td><td style="color:var(--ok);font-weight:600">${d}</td><td style="color:${a.length-d?"var(--no)":"var(--mu)"};font-weight:600">${a.length-d}</td><td>${pct(d,a.length)}%</td></tr>`}).join("")}
+else{const nm=$("pwho").selectedOptions[0].text,no=base.filter(p=>p.s!=0),ok=base.filter(p=>p.s==0),it=p=>`<div class="pi"><b>${esc(p.n)}</b><br><small>${esc(p.c||"")}${p.f?" · เสร็จสิ้น "+esc(p.f):""}${p.s==0&&p.d?" · ส่งเมื่อ "+pdate(p.d):""}${p.m?" · "+esc(p.m):""}</small></div>`;
+$("pme").innerHTML=`<div class="tc" style="margin:0 0 12px"><div class="tn">${esc(nm)}</div><p style="color:var(--mu);margin:4px 0 8px">รับผิดชอบ ${base.length} รายการ · ส่งรายงานแล้ว ${ok.length} · ยังไม่ส่ง ${no.length}</p><span class="tag" style="background:${no.length?"var(--gold)":"var(--ok)"};font-size:14px;padding:5px 12px">${no.length?"มีรายงานที่ต้องส่ง "+no.length+" รายการ":"ส่งรายงานครบแล้ว"}</span></div>
+<div class="pl"><div><h2 style="color:var(--no)">🔴 ยังไม่ส่งรายงาน (${no.length})</h2>${no.map(it).join("")||'<p style="color:var(--mu)">ไม่มี 🎉</p>'}</div><div><h2>🟢 ส่งรายงานแล้ว (${ok.length})</h2>${ok.map(it).join("")||'<p style="color:var(--mu)">ยังไม่มี</p>'}</div></div>`}
+$("pth").textContent=(w?"รายการของ "+$("pwho").selectedOptions[0].text:"รายการโครงการ/กิจกรรมทั้งหมด")+` (${L.length} รายการ)`;
+$("phint").textContent=ADM?"admin: แตะสถานะเพื่อสลับ ส่งแล้ว/ยังไม่ส่ง · แก้ไขช่องอื่นแล้วระบบบันทึกทันที":"แก้ไขข้อมูลได้เฉพาะ admin หากข้อมูลไม่ถูกต้องโปรดแจ้งผู้รับผิดชอบระบบ";
+$("pjt").closest(".box").hidden=!!w&&!ADM;
+pjtable(L)}
+function pjtable(L){const A=ADM,cols=A?9:8;let h=`<thead><tr><th>ที่</th><th>รหัส</th><th>โครงการ/กิจกรรม</th><th>ผู้รับผิดชอบ</th><th>เสร็จสิ้นภาคเรียน</th><th>การส่งรายงาน</th><th>วันที่ส่งรายงาน</th><th>หมายเหตุ</th>${A?"<th></th>":""}</tr></thead><tbody>`,lg=null;
+L.forEach(p=>{const i=P.indexOf(p);if(p.g!==lg){lg=p.g;h+=`<tr class="gr"><td colspan="${cols}">${esc(p.g||"ไม่ระบุยุทธศาสตร์")}</td></tr>`}
+const st=p.s==0?`<span class="sb" style="background:var(--ok)">🟢 ส่งแล้ว</span>`:`<span class="sb" style="background:var(--no)">🔴 ยังไม่ส่ง</span>`;
+h+=`<tr class="${p.k==1?"ac":""}"><td class="ct" data-l="ที่">${i+1}</td><td class="ct" data-l="รหัส">${esc(p.c||"")}</td><td class="nm">${esc(p.n)}</td><td data-l="ผู้รับผิดชอบ">${esc(p.o)}</td>`+
+(A?`<td class="ct" data-l="เสร็จสิ้น"><select onchange="pjset('${p.id}',{f:this.value})"><option value="">—</option>${PTERMS.map(t=>`<option${p.f===t?" selected":""}>${t}</option>`).join("")}</select></td><td class="ct" data-l="การส่งรายงาน"><button class="sb" style="background:${p.s==0?"var(--ok)":"var(--no)"}" onclick="pjtog('${p.id}')">${p.s==0?"🟢 ส่งแล้ว":"🔴 ยังไม่ส่ง"}</button></td><td class="ct" data-l="วันที่ส่ง"><input type="date" value="${/^\d{4}-\d\d-\d\d$/.test(p.d)?p.d:""}" onchange="pjset('${p.id}',{d:this.value})"></td><td data-l="หมายเหตุ"><input class="nt" value="${esc(p.m||"")}" onchange="pjset('${p.id}',{m:this.value})"></td><td class="ct"><button class="o" style="padding:3px 8px;font-size:12px" onclick="pjform('${p.id}')">แก้ไข</button></td>`
+:`<td class="ct" data-l="เสร็จสิ้น">${esc(p.f||"—")}</td><td class="ct" data-l="การส่งรายงาน">${st}</td><td class="ct" data-l="วันที่ส่ง">${pdate(p.d)||"—"}</td><td data-l="หมายเหตุ">${esc(p.m||"")}</td>`)+"</tr>"});
+$("pjt").innerHTML=L.length?h+"</tbody>":'<tr><td>ไม่พบรายการ</td></tr>'}
+function pjwho(k){$("pwho").value=k;pjdraw();window.scrollTo&&window.scrollTo(0,0)}
+async function pjset(id,v){if(!ADM)return;const p=P.find(x=>x.id===id);if(!p)return;const o=Object.assign({},p);Object.assign(p,v);pjdraw();
+try{const r=await api({a:"pjset",pw:PWD,id,v:{f:p.f,s:p.s,d:p.d,m:p.m}});if(!r.ok)throw 0;$("pmsg").textContent=""}catch(e){Object.assign(p,o);pjdraw();$("pmsg").textContent="บันทึกไม่สำเร็จ กรุณาลองใหม่"}}
+function pjtog(id){const p=P.find(x=>x.id===id);if(!p)return;if(p.s==0)pjset(id,{s:1,d:""});else pjset(id,{s:0,d:p.d||todayS()})}
+function pjform(id){if(!ADM)return;const p=id?P.find(x=>x.id===id):{id:"",c:"",n:"",k:0,g:$("pgr").value||"",o:"",f:"",s:1,d:"",m:""};if(!p)return;$("pfm").hidden=false;
+$("pfm").innerHTML=`<h2>${id?"แก้ไขรายการ":"เพิ่มรายการโครงการ/กิจกรรม"}</h2><div class="fg"><label>ประเภท<select id="pf_k" style="width:100%"><option value="0"${p.k!=1?" selected":""}>โครงการ</option><option value="1"${p.k==1?" selected":""}>กิจกรรม (ย่อยในโครงการ)</option></select></label><label>รหัส<input id="pf_c" value="${esc(p.c||"")}" placeholder="เช่น ว1/2568"></label>
+<label class="wd">ชื่อโครงการ/กิจกรรม<input id="pf_n" value="${esc(p.n)}" placeholder="เช่น 3.1 กิจกรรมบันทึกรักการอ่าน"></label>
+<label class="wd">ยุทธศาสตร์ / หมวด<input id="pf_g" list="pf_gl" value="${esc(p.g||"")}"><datalist id="pf_gl">${pjgroups().map(g=>`<option value="${esc(g)}">`).join("")}</datalist></label>
+<label class="wd">ผู้รับผิดชอบ (หลายคนคั่นด้วย /)<input id="pf_o" list="pf_ol" value="${esc(p.o)}"><datalist id="pf_ol">${people().map(x=>`<option value="${esc(x[1])}">`).join("")}${T.map(n=>`<option value="${esc(n)}">`).join("")}</datalist></label></div>
+<div class="bt"><button onclick="pjsave('${p.id}')">บันทึก</button><button class="o" onclick="$('pfm').hidden=true">ยกเลิก</button>${id?`<button class="o" style="color:var(--no);border-color:var(--no)" onclick="pjdel('${p.id}')">ลบรายการ</button>`:""}</div><div id="pfmm" style="color:var(--no)"></div>`;
+$("pfm").scrollIntoView&&$("pfm").scrollIntoView({behavior:"smooth"})}
+async function pjsave(id){const g=k=>$("pf_"+k).value.trim(),e={k:+g("k"),c:g("c"),n:g("n"),g:g("g"),o:g("o")};
+if(!e.n||!e.o){$("pfmm").textContent="กรุณากรอกชื่อรายการและผู้รับผิดชอบ";return}
+try{const r=await api(id?{a:"pjsave",pw:PWD,id,e}:{a:"pjsave",pw:PWD,id:"",e:Object.assign(e,{f:"",s:1,d:"",m:""})});if(!r.ok)throw 0;$("pfm").hidden=true;await pjopen()}catch(x){$("pfmm").textContent="บันทึกไม่สำเร็จ กรุณาลองใหม่"}}
+async function pjdel(id){if(!confirm("ยืนยันลบรายการนี้?"))return;try{const r=await api({a:"pjdel",pw:PWD,id});if(!r.ok)throw 0;$("pfm").hidden=true;await pjopen()}catch(e){$("pfmm").textContent="ลบไม่สำเร็จ กรุณาลองใหม่"}}
+function pjprint(){const w=$("pwho").value,L=pjfilter(),c=pstat(L),nm=w?$("pwho").selectedOptions[0].text:"";let lg=null,rows="";
+L.forEach(p=>{if(p.g!==lg){lg=p.g;rows+=`<tr><td colspan="9" style="text-align:left;font-weight:700">${esc(p.g||"")}</td></tr>`}
+rows+=`<tr><td>${P.indexOf(p)+1}</td><td>${esc(p.c||"")}</td><td style="text-align:left;${p.k==1?"padding-left:16px":"font-weight:600"}">${esc(p.n)}</td><td style="text-align:left">${esc(p.o)}</td><td>${p.f===PTERMS[0]?"✓":""}</td><td>${p.f===PTERMS[1]?"✓":""}</td><td>${p.s==0?"✓":""}</td><td>${p.s!=0?"✓":""}</td><td>${pdate(p.d)}</td></tr>`});
+$("prp").innerHTML=`<div style="text-align:center"><h2 style="font-size:17px;color:#000">แบบติดตามการดำเนินโครงการ/กิจกรรม และการส่งรายงาน</h2><p>ปีการศึกษา ${PY} โรงเรียนวัดแสนเกษม สำนักงานเขตหนองจอก กรุงเทพมหานคร${nm?"<br>ผู้รับผิดชอบ: "+esc(nm):""}<br>ข้อมูล ณ วันที่ ${new Date().toLocaleDateString("th-TH",{dateStyle:"long"})}</p></div>
+<table><thead><tr><th rowspan="2">ที่</th><th rowspan="2">รหัส</th><th rowspan="2">โครงการ/กิจกรรม</th><th rowspan="2">ผู้รับผิดชอบ</th><th colspan="2">ภาคเรียนที่เสร็จสิ้น</th><th colspan="2">การส่งรายงาน</th><th rowspan="2">วันที่ส่ง</th></tr><tr><th>${PTERMS[0]}</th><th>${PTERMS[1]}</th><th>ส่งแล้ว</th><th>ยังไม่ส่ง</th></tr></thead><tbody>${rows}</tbody></table>
+<h3 style="margin-top:14px">สรุปผลการดำเนินงาน</h3><p>ดำเนินการเสร็จสิ้นภาคเรียนที่ ${PTERMS[0]} จำนวน ${c.t1} รายการ &nbsp; ดำเนินการเสร็จสิ้นภาคเรียนที่ ${PTERMS[1]} จำนวน ${c.t2} รายการ<br>ส่งรายงานแล้ว ${c.ok} รายการ &nbsp; ยังไม่ส่งรายงาน ${c.no} รายการ (จากทั้งหมด ${c.all} รายการ · ${c.pj} โครงการ ${c.ac} กิจกรรม)</p>
+<p style="margin-top:40px;text-align:right">ลงชื่อ ........................................................ ผู้ตรวจสอบ<br>(........................................................)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>วันที่ ........ เดือน .......................... พ.ศ. ..............</p>`;
+document.body.classList.add("prp");window.print();setTimeout(()=>document.body.classList.remove("prp"),500)}
+window.addEventListener("afterprint",()=>document.body.classList.remove("prp"));
+["pwho","pst","pgr"].forEach(id=>$(id).addEventListener("change",pjdraw));$("pq").addEventListener("input",pjdraw);
+$("prs").onclick=()=>{["pwho","pst","pgr","pq"].forEach(id=>$(id).value="");pjdraw()};
+$("prb").onclick=pjprint;$("padd").onclick=()=>pjform("");
+$("pbk").onclick=()=>show(PPV.v,PPV.i);
+$("topj").onclick=()=>goP("home",0,"");$("adpj").onclick=()=>goP("admin",0,"");
+$("pjimb").onclick=async()=>{if(!confirm("ยืนยันนำเข้ารายการโครงการ/กิจกรรม 76 รายการ?"))return;$("pjimr").textContent="กำลังนำเข้า...";
+try{const r=await api({a:"pjinit",pw:PWD,P:PJSEED.map(x=>({c:x[0],n:x[1],k:x[2],g:PJG[x[3]],o:x[4],f:x[5],s:x[6],d:"",m:""}))});if(!r.ok)throw r;$("pjimr").textContent="นำเข้าสำเร็จ "+r.n+" รายการ"}
+catch(e){$("pjimr").textContent=e&&e.err==="exists"?"มีรายการโครงการอยู่แล้ว ระบบจึงไม่เขียนทับ":"นำเข้าไม่สำเร็จ (ตรวจสอบว่าได้อัปเดต Apps Script แล้ว)"}};
+function pjteach(i,pr){let h='<div class="tc"><b>โครงการ/กิจกรรมที่รับผิดชอบ (ปีการศึกษา '+PY+')</b>';
+if(!pr)return h+'<p style="color:var(--mu)">ไม่สามารถโหลดข้อมูลโครงการได้</p></div>';
+const k=nk(T[i]),L=pr.filter(p=>isMine(p,k));if(!L.length)return h+'<p style="color:var(--mu)">ไม่มีรายการที่รับผิดชอบ</p></div>';
+const no=L.filter(p=>p.s!=0),ok=L.filter(p=>p.s==0),it=p=>`<div class="row"><span>${esc(p.n)}${p.s==0&&p.d?`<br><small style="color:var(--mu)">ส่งเมื่อ ${pdate(p.d)}</small>`:""}</span><span class="tag" style="background:${p.s==0?"var(--ok)":"var(--no)"}">${p.s==0?"🟢 ส่งแล้ว":"🔴 ยังไม่ส่ง"}</span></div>`;
+return h+`<p style="color:var(--mu);margin:4px 0">รับผิดชอบ ${L.length} รายการ · ส่งรายงานแล้ว ${ok.length} · ยังไม่ส่ง ${no.length}</p>${no.map(it).join("")}${ok.map(it).join("")}<div class="bt"><button class="o" onclick="goP('teacher',${i},'${k.replace(/'/g,"")}')">ดูรายละเอียดโครงการ</button></div></div>`}
+show("home");
+</script>
+</body>
+</html>
