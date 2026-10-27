@@ -68,7 +68,25 @@ td input{width:120px;padding:3px 6px;font-size:12px}
 </head>
 <body>
 <header><h1>ระบบสรุปและติดตามความครบถ้วนการส่งงานของครู</h1><p><span id="tl1">ก่อนปิดภาคเรียนที่ 1 ปีการศึกษา 2569</span> · โรงเรียนวัดแสนเกษม สำนักงานเขตหนองจอก กรุงเทพมหานคร</p><div style="margin-top:8px">ภาคเรียน: <select id="term" style="padding:5px 8px"></select></div></header>
-<main id="home"><div class="hm box"><h2>ระบบติดตามการส่งงานของครู</h2><p>เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</p><select id="pick"><option value="">เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</option></select><button id="tosch" class="o" style="width:100%;padding:12px;margin-bottom:8px">ตารางงานและปฏิทิน (ดูภาพรวม)</button><button id="topj" class="o" style="width:100%;padding:12px;margin-bottom:8px">ติดตามโครงการ/กิจกรรม และการส่งรายงาน</button><button id="toadm" style="width:100%;padding:12px" class="o">admin</button><div id="lg" hidden style="margin-top:12px"><input id="pw" type="password" autocomplete="off" placeholder="รหัสผ่าน admin" style="width:100%;font-size:16px;padding:11px"><button id="lgo" style="width:100%;padding:12px;margin-top:8px">เข้าสู่ระบบ</button><div id="er" style="color:var(--no);margin-top:8px;min-height:20px"></div></div></div></main>
+<!-- ===== เมนูเชื่อมระบบตารางสอน ===== -->
+<style>
+.sks-links{max-width:1200px;margin:10px auto 0;padding:0 14px;font-family:Sarabun,sans-serif}
+.sks-links .h{font-weight:700;color:#0a7f45;margin:0 0 6px;font-size:15px}
+.sks-links .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.sks-links a{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #c9e8d1;border-radius:10px;padding:10px 12px;text-decoration:none;color:#17261e;font-weight:600}
+.sks-links a span{font-size:20px}
+</style>
+<div class="sks-links">
+<div class="h">ระบบของโรงเรียน</div>
+<div class="g">
+<a href="https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec" target="_top"><span>📅</span>ตารางสอน</a>
+<a href="https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec?page=daily" target="_top"><span>🗓</span>ตารางรายวัน</a>
+<a href="https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec?page=training" target="_top"><span>🎓</span>ส่งรายงานการอบรม</a>
+<a href="https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec?page=trainrep" target="_top"><span>📑</span>รายงานการอบรม</a>
+<a href="https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec?page=events" target="_top"><span>📆</span>ปฏิทินปฏิบัติงาน</a>
+</div>
+</div>
+<!-- ===== จบเมนูเชื่อมระบบตารางสอน ===== --><main id="home"><div class="hm box"><h2>ระบบติดตามการส่งงานของครู</h2><p>เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</p><select id="pick"><option value="">เลือกชื่อครูเพื่อดูข้อมูลของตนเอง</option></select><button id="tosch" class="o" style="width:100%;padding:12px;margin-bottom:8px">ตารางงานและปฏิทิน (ดูภาพรวม)</button><button id="topj" class="o" style="width:100%;padding:12px;margin-bottom:8px">ติดตามโครงการ/กิจกรรม และการส่งรายงาน</button><button id="toadm" style="width:100%;padding:12px" class="o">admin</button><div id="lg" hidden style="margin-top:12px"><input id="pw" type="password" autocomplete="off" placeholder="รหัสผ่าน admin" style="width:100%;font-size:16px;padding:11px"><button id="lgo" style="width:100%;padding:12px;margin-top:8px">เข้าสู่ระบบ</button><div id="er" style="color:var(--no);margin-top:8px;min-height:20px"></div></div></div></main>
 <main id="teacher" hidden></main>
 <main id="sched" hidden>
 <div class="box"><div class="tools"><button class="o" id="sbk">กลับ</button><b style="align-self:center;color:var(--g)">ตารางงานและปฏิทิน</b></div>
