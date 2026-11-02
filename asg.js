@@ -1,5 +1,5 @@
 /* บันทึกการมอบหมายงาน — ระบบติดตามการส่งงานครู ร.ร.วัดแสนเกษม
- * ไฟล์นี้เพิ่มปุ่ม "📌 มอบหมายงาน" ในหัวข้อระบบของโรงเรียน และหน้าบันทึกการมอบหมายงาน
+ * ไฟล์นี้เพิ่มปุ่ม "📌 มอบหมายงาน", "⚙️ Admin" และปุ่มเมนูใหม่ (กิจกรรมออนไลน์/โครงสร้างการบริหาร/ดาวน์โหลดเอกสาร) ในหัวข้อระบบของโรงเรียน
  * ครู: เลือกชื่อตัวเอง → เห็นงานของตัวเอง + กด "รับทราบ" (แจ้งเตือนในระบบ: ตัวเลขสีแดงที่ปุ่ม + แถบเตือน)
  * ผู้บริหาร: ใส่รหัสผ่านผู้บริหาร (รหัสเดียวกับระบบติดตาม) → มอบหมาย/แก้ไข/ลบ/บันทึกว่าเสร็จ
  */
@@ -127,6 +127,16 @@
     var p = el.getAttribute('data-asg').split(':'), a = p[0];
     if (a === 'open') { S.open = !S.open; render(); if (S.open) { document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); load().catch(function () {}); } return; }
     if (a === 'close') { S.open = false; return render(); }
+    if (a === 'admin') { document.getElementById('asgAdm').style.display = 'flex'; return; }
+    if (a === 'admclose') { document.getElementById('asgAdm').style.display = 'none'; return; }
+    if (a === 'admtrack') {
+      document.getElementById('asgAdm').style.display = 'none'; document.body.classList.add('sks-open');
+      var home = document.getElementById('home') || document.body;
+      var b = [].filter.call(home.querySelectorAll('button,a'), function (x) { return /^\s*admin\s*$/i.test(x.textContent); })[0];
+      if (b) { b.click(); setTimeout(function () { (home.querySelector('input[type=password]') || b).scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150); }
+      else home.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
     if (a === 'tab') { S.tab = p[1]; return render(); }
     if (a === 'pick') { [].forEach.call(document.querySelectorAll('[name=asgA]'), function (c) { c.checked = p[1] === '1'; }); return; }
     if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', a: [] }; return render(); }
@@ -170,6 +180,8 @@
       '.asg-chk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;font-size:14px;margin-top:4px}.asg-chk label{display:flex;gap:6px;align-items:center;min-height:30px}' +
       '.asg-empty{background:#fff;border-radius:12px;padding:16px;text-align:center;color:#6B7280}' +
       '#asgToast{display:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;z-index:99;max-width:90vw}' +
+      '#asgAdm{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:98;align-items:center;justify-content:center;padding:16px}.asg-adm-box{background:#fff;color:#111;border-radius:16px;padding:16px;max-width:420px;width:100%}' +
+      '.asg-adm-opt{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin-top:10px;text-decoration:none;color:#111}.asg-adm-opt:hover{background:#f1f5f9}.asg-adm-opt>span{font-size:28px}.asg-adm-opt small{display:block;color:#6b7280;font-size:13px}' +
       '#asgNb{font-style:normal;background:#DC2626;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:0 7px;margin-left:6px}' +
       '@media(max-width:560px){.asg-stats{grid-template-columns:1fr 1fr}.asg-pp>div{grid-template-columns:1fr auto}.asg-pp>div>span:nth-child(2){grid-row:2}}';
     document.head.appendChild(css);
@@ -177,6 +189,20 @@
     var btn = document.createElement('a'); btn.href = '#'; btn.setAttribute('data-asg', 'open'); btn.innerHTML = '<span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em>';
     var grid = links ? (document.getElementById('sksTrack') || links.querySelector('a')) : null;
     if (grid && grid.parentNode) grid.parentNode.appendChild(btn);
+    // ปุ่มเมนูเพิ่มเติม (เพิ่มอัตโนมัติ ไม่ต้องแก้ index.html) + ปุ่ม Admin รวม
+    var TT = 'https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec';
+    if (grid && grid.parentNode) {
+      [['acts', '🗓️', 'ตารางกิจกรรมออนไลน์'], ['org', '🏛️', 'โครงสร้างการบริหาร'], ['docs', '📂', 'ดาวน์โหลดเอกสาร']].forEach(function (x) {
+        if (grid.parentNode.querySelector('a[href*="page=' + x[0] + '"]')) return;
+        var a2 = document.createElement('a'); a2.href = TT + '?page=' + x[0]; a2.target = '_top'; a2.innerHTML = '<span>' + x[1] + '</span>' + x[2]; grid.parentNode.appendChild(a2);
+      });
+      var ad = document.createElement('a'); ad.href = '#'; ad.setAttribute('data-asg', 'admin'); ad.innerHTML = '<span>⚙️</span>Admin'; grid.parentNode.appendChild(ad);
+    }
+    var am = document.createElement('div'); am.id = 'asgAdm'; am.style.display = 'none';
+    am.innerHTML = '<div class="asg-adm-box"><div class="asg-head"><b>⚙️ เข้าสู่ระบบ Admin</b><button data-asg="admclose">✕</button></div>' +
+      '<a class="asg-adm-opt" href="' + TT + '?page=admin" target="_top"><span>📅</span><div><b>Admin ระบบตารางสอน</b><small>ตารางสอน สอนแทน รางวัล เอกสาร กิจกรรม เว็บไซต์โรงเรียน</small></div></a>' +
+      '<a class="asg-adm-opt" href="#" data-asg="admtrack"><span>📋</span><div><b>Admin ระบบติดตามงาน</b><small>สถานะการส่งงาน ตารางงาน โครงการ มอบหมายงาน</small></div></a></div>';
+    document.body.appendChild(am);
     var ban = document.createElement('div'); ban.id = 'asgBan'; ban.style.display = 'none'; ban.setAttribute('data-asg', 'open');
     if (!anchor) { anchor = document.createElement('div'); anchor.id = 'asgBox'; (links || document.body).insertAdjacentElement(links ? 'afterend' : 'afterbegin', anchor); }
     anchor.parentNode.insertBefore(ban, anchor);
