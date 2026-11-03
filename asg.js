@@ -218,7 +218,7 @@
   function load() {
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
     var pp = post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; });
-    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); teacherView(true); });
+    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); teacherView(true); });
   }
   function click(ev) {
     var el = ev.target.closest('[data-asg]'); if (!el) return;
@@ -492,11 +492,39 @@
     if (id === 'mwMonth' || id === 'mwMonth2') { MW.month = ev.target.value; mwRender(); }
     if (id === 'mwFil') { MW.filter = ev.target.value; mwRender(); }
   }
+  // ⏰ แบนเนอร์ "งานที่ใกล้จะถึง" (ทุกคนเห็น) — ปฏิทินปฏิบัติงาน + กิจกรรมออนไลน์ + กำหนดส่งงานมอบหมาย
+  var UP = { items: null, more: false };
+  function loadUp() { return fetch(TT + '?api=upcoming').then(function (r) { return r.json(); }).then(function (j) { UP.items = j.ok ? j.data.items : []; renderUp(); }).catch(function () { UP.items = []; renderUp(); }); }
+  var TMS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], TWD = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+  function renderUp() {
+    var el = document.getElementById('upBan'); if (!el || UP.items === null) return;
+    var td = today(), L = UP.items.slice();
+    S.G.forEach(function (x) {
+      var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }); if (!open.length || x.u < td) return;
+      L.push({ src: 'asg', date: x.u, time: '', title: x.n, who: open.length === x.a.length ? x.a.length + ' คน' : 'ค้าง ' + open.length + '/' + x.a.length + ' คน', place: '', id: x.id });
+    });
+    L = L.filter(function (x) { return x.date >= td || (x.end && x.end >= td); }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
+    var lim = Date.parse(td + 'T00:00:00Z') + 14 * 864e5; L = L.filter(function (x) { return Date.parse(x.date + 'T00:00:00Z') <= lim || x.date < td; });
+    if (!L.length) { el.innerHTML = '<div class="up-wrap up-none">✅ ไม่มีงานหรือกิจกรรมในอีก 14 วันข้างหน้า</div>'; return; }
+    var TAG = { event: ['📆 ปฏิทินโรงเรียน', '#0E7490'], act: ['🗓️ กิจกรรมออนไลน์', '#7C3AED'], asg: ['📌 กำหนดส่งงาน', '#B91C1C'] };
+    var dd = function (x) { var d = days(x.date); return x.date < td ? 'กำลังดำเนินการ' : d === 0 ? 'วันนี้!' : d === 1 ? 'พรุ่งนี้' : 'อีก ' + d + ' วัน'; };
+    var lvl = function (x) { var d = days(x.date); return d <= 0 ? 'u0' : d <= 2 ? 'u1' : d <= 7 ? 'u2' : 'u3'; };
+    var dt = function (x) { var p = x.date.split('-').map(Number), w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); return { d: p[2], m: TMS[p[1] - 1], w: TWD[w] }; };
+    var go = function (x) { return x.src === 'asg' ? ' data-asg="open"' : ' href="' + TT + '?page=' + (x.src === 'act' ? 'acts' : 'events') + '" target="_top"'; };
+    var f = L[0], fd = dt(f), rest = L.slice(1, UP.more ? 30 : 7);
+    var h = '<div class="up-wrap"><div class="up-head"><div><b>⏰ งานที่ใกล้จะถึง</b><small>อีก 14 วันข้างหน้า · ' + L.length + ' รายการ</small></div><div class="up-legend"><span style="background:#0E7490">ปฏิทินโรงเรียน</span><span style="background:#7C3AED">ออนไลน์</span><span style="background:#B91C1C">กำหนดส่งงาน</span></div></div>' +
+      '<div class="up-body"><a class="up-next ' + lvl(f) + '"' + go(f) + '><div class="up-cd">' + esc(dd(f)) + '</div><div class="up-nt">' + esc(f.title) + '</div>' +
+      '<div class="up-nm">' + esc('วัน' + fd.w + 'ที่ ' + fd.d + ' ' + fd.m) + (f.time ? ' · ' + esc(f.time) + ' น.' : '') + (f.place ? ' · 📍 ' + esc(f.place) : '') + '</div>' + (f.who ? '<div class="up-nm">👥 ' + esc(f.who) + '</div>' : '') +
+      '<span class="up-tag" style="background:rgba(255,255,255,.25)">' + TAG[f.src][0] + '</span></a><div class="up-list">' +
+      rest.map(function (x) { var d = dt(x); return '<a class="up-it"' + go(x) + '><span class="up-date ' + lvl(x) + '"><b>' + d.d + '</b>' + d.m + '</span><span class="up-tx"><b>' + esc(x.title) + '</b><small><i style="background:' + TAG[x.src][1] + '"></i>' + esc(dd(x)) + (x.time ? ' · ' + esc(x.time) : '') + (x.who ? ' · ' + esc(x.who) : '') + '</small></span></a>'; }).join('') +
+      (L.length > 7 ? '<a class="up-more" href="#" data-up="more">' + (UP.more ? 'ย่อ ▲' : 'ดูทั้งหมด ' + L.length + ' รายการ ▼') + '</a>' : '') + '</div></div></div>';
+    el.innerHTML = h;
+  }
   // จัดเมนูหน้าแรกใหม่เป็นหมวด + ปุ่มใหญ่ งานของฉัน / ภาพรวม
   function mwMenu(links) {
     if (!links || document.getElementById('mwMenu')) return;
     var A = function (href, ic, tx, extra) { return '<a href="' + href + '"' + (extra || ' target="_top"') + '><span>' + ic + '</span>' + tx + '</a>'; };
-    var html = '<div id="mwMenu"><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
+    var html = '<div id="mwMenu"><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
       '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a></div>' +
       '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้') + '</div>' +
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร') +
@@ -513,6 +541,7 @@
       el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a href="' + TT + '?page=admin&to=links" target="_top" style="font-size:12.5px;font-weight:400;margin-left:6px">จัดการลิงก์ (Admin)</a></div><div class="g">' +
         (L.length ? L.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์ — Admin เพิ่มได้ที่ "จัดการลิงก์"</span>') + '</div>';
     }).catch(function () {});
+    loadUp(); document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
   }
   // Admin เข้าครั้งเดียว: เข้า Admin ระบบติดตามแล้ว ใช้กับมอบหมายงานได้เลย
@@ -551,6 +580,16 @@
       '#asgNb{font-style:normal;background:#DC2626;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:0 7px;margin-left:6px}' +
       '#tosch,#adsch,#tnm,#tba{display:none!important}' +
       '#mwMenu .h{font-weight:700;color:#0a7f45;margin:12px 0 6px;font-size:15px}#mwMenu .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}' +
+      '.up-wrap{background:linear-gradient(135deg,#F97316,#E11D48 60%,#BE185D);border-radius:18px;padding:14px;color:#fff;margin-bottom:12px;box-shadow:0 6px 18px rgba(225,29,72,.25)}.up-none{background:linear-gradient(135deg,#059669,#10B981);font-size:16px;font-weight:600}' +
+      '.up-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.up-head b{font-size:21px}.up-head small{display:block;opacity:.9;font-size:13px}.up-legend span{display:inline-block;font-size:11.5px;border-radius:99px;padding:1px 8px;margin-left:4px;border:1px solid rgba(255,255,255,.6)}' +
+      '.up-body{display:grid;grid-template-columns:minmax(240px,1fr) 1.6fr;gap:10px}.up-next{display:flex!important;flex-direction:column;gap:4px;border-radius:14px;padding:14px!important;color:#fff!important;text-decoration:none!important;border:0!important;background:rgba(255,255,255,.15)!important;cursor:pointer;animation:upPulse 2.4s infinite}' +
+      '.up-next.u0{background:rgba(127,29,29,.45)!important}.up-cd{font-size:30px;font-weight:800;line-height:1.1}.up-nt{font-size:18px;font-weight:700}.up-nm{font-size:13.5px;opacity:.95}.up-tag{align-self:flex-start;border-radius:99px;padding:2px 10px;font-size:12px;margin-top:4px}' +
+      '@keyframes upPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.35)}50%{box-shadow:0 0 0 6px rgba(255,255,255,0)}}' +
+      '.up-list{background:#fff;border-radius:14px;padding:6px 8px;color:#111}.up-it{display:flex!important;gap:10px;align-items:center;padding:6px 4px!important;border:0!important;border-bottom:1px solid #f1f5f9!important;border-radius:0!important;text-decoration:none!important;color:#111!important;background:none!important;font-weight:400!important}.up-it:hover{background:#FFF7ED!important}' +
+      '.up-date{flex:0 0 48px;text-align:center;border-radius:10px;padding:3px 0;font-size:11.5px;line-height:1.1;color:#fff}.up-date b{display:block;font-size:19px}.up-date.u0{background:#B91C1C}.up-date.u1{background:#EA580C}.up-date.u2{background:#D97706}.up-date.u3{background:#64748B}' +
+      '.up-tx{display:flex;flex-direction:column;min-width:0}.up-tx b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.up-tx small{color:#6B7280;font-size:12.5px}.up-tx i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}' +
+      '.up-more{display:block!important;text-align:center;padding:6px!important;border:0!important;background:none!important;color:#BE185D!important;font-size:13.5px}' +
+      '@media(max-width:700px){.up-body{grid-template-columns:1fr}.up-cd{font-size:26px}}' +
       '.mw-big{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mw-big a{text-decoration:none!important;display:flex!important;gap:12px;align-items:center;padding:14px 16px!important;border-radius:14px!important;color:#fff!important;border:0!important;font-size:19px;font-weight:700}' +
       '.mw-big a>span{font-size:32px}.mw-big small{display:block;font-weight:400;font-size:13px;opacity:.92}.mw-b1{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.mw-b2{background:linear-gradient(135deg,#7C3AED,#6D28D9)!important}' +
       '#mwBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);font-family:inherit}#mwBox .asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer}' +
