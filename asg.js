@@ -340,7 +340,8 @@
   function trP() { return MW.P ? Promise.resolve(MW.P) : post({ a: 'pjall' }).then(function (j) { MW.P = j.P || []; return MW.P; }).catch(function () { MW.P = []; return MW.P; }); }
   function tid(nm) { var t = ((MW.W && MW.W.teachers) || []).filter(function (x) { return x.name === nm; })[0] || ((MW.W && MW.W.teachers) || []).filter(function (x) { return first(x.name) === first(nm); })[0]; return t ? t.id : ''; }
   function ownPj(nm) { var f = first(nm); return (MW.P || []).filter(function (p) { return p.o.indexOf(nm) >= 0 || (f.length > 1 && p.o.indexOf(f) >= 0); }); }
-  function planOf(id, kind, m) { return ((MW.W && MW.W.plans) || []).filter(function (x) { return x.t === id && x.k === kind && x.m === m; }); }
+  // แผนปกติ = ส่งรายภาคเรียน · แผนหน้าเดียว+MakerSpace = ส่งรายเดือน
+  function planOf(id, kind, m) { var tm = MW.W && MW.W.term ? MW.W.term.id : ''; return ((MW.W && MW.W.plans) || []).filter(function (x) { return x.t === id && x.k === kind && (kind === 'normal' ? (!tm || x.term === tm) : x.m === m); }); }
   function asgOf(nm) { return S.G.filter(function (x) { return x.a.indexOf(nm) >= 0; }); }
   function ttLink(page, id) { return TT + '?page=' + page + (id ? '&t=' + encodeURIComponent(id) : ''); }
   function okc(t) { return '<span class="mw-ok">✅ ' + t + '</span>'; }
@@ -363,22 +364,23 @@
   }
   function monthSel(id) {
     var ms = {}, td = MW.W.today.slice(0, 7); ms[td] = 1; (MW.W.plans || []).forEach(function (x) { if (x.m) ms[x.m] = 1; });
-    var y = Number(td.slice(0, 4)), m = Number(td.slice(5, 7)); for (var i = 1; i <= 2; i++) { var d = new Date(Date.UTC(y, m - 1 - i, 1)); ms[d.toISOString().slice(0, 7)] = 1; }
-    return '<select id="' + id + '">' + Object.keys(ms).sort().reverse().map(function (k) { return '<option value="' + k + '"' + (k === MW.month ? ' selected' : '') + '>เดือน ' + mLabel(k) + '</option>'; }).join('') + '</select>';
+    (MW.W.months || []).forEach(function (k) { ms[k] = 1; }); // ทุกเดือนของภาคเรียน (เช่น พ.ย. – มี.ค.)
+    if (!(MW.W.months || []).length) { var y = Number(td.slice(0, 4)), m = Number(td.slice(5, 7)); for (var i = 1; i <= 2; i++) { var d = new Date(Date.UTC(y, m - 1 - i, 1)); ms[d.toISOString().slice(0, 7)] = 1; } }
+    return '<select id="' + id + '">' + Object.keys(ms).sort().map(function (k) { return '<option value="' + k + '"' + (k === MW.month ? ' selected' : '') + '>เดือน ' + mLabel(k) + (k === td ? ' (เดือนนี้)' : '') + '</option>'; }).join('') + '</select>';
   }
   function mwMe() {
     var nm = S.me, T = (MW.W.people && MW.W.people.length ? MW.W.people : (S.people && S.people.length ? S.people : MW.W.teachers));
     var h = '<div class="mw-top"><label class="asg-f" style="flex:1 1 260px">ชื่อของฉัน<select id="mwMe"><option value="">— เลือกชื่อของคุณ —</option>' + T.map(function (t) { return '<option' + (t.name === nm ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('') + '</select></label>' +
-      '<label class="asg-f" style="flex:0 1 220px">แผนการสอน' + monthSel('mwMonth') + '</label></div>';
+      '<label class="asg-f" style="flex:0 1 220px">แผนหน้าเดียวของเดือน' + monthSel('mwMonth') + '</label></div>';
     if (!nm) return h + '<div class="asg-empty">เลือกชื่อของคุณครั้งเดียว ระบบจำไว้ในเครื่องนี้ — แล้วจะเห็นงานทุกเมนูในหน้าเดียว</div>';
     var id = tid(nm), M = MW.month, isT = !!id || S.teachers.indexOf(nm) >= 0, me = MW.mine && MW.mine.name === nm ? MW.mine : null;
     if (!me && isT) { mwMine(nm); }
     var cnt = { no: 0, soon: 0, ok: 0 };
     // แผนการสอน
     var pn = planOf(id, 'normal', M), po = planOf(id, 'onepage', M), c0 = { no: 0, ok: 0 };
-    var plan = '<div class="mw-sec" style="border-left-color:#2563EB"><h4>📘 แผนการสอน · ' + mLabel(M) + '</h4>' +
-      row('แผนการสอน (ปกติ)', pn.length ? okc('ส่งแล้ว ' + th(pn[0].at.slice(0, 10))) : noc('ยังไม่ส่ง') + ' <a class="mw-go" href="' + ttLink('plans', id) + '" target="_top">ส่งเลย</a>') +
-      row('แผนหน้าเดียว + MakerSpace', po.length ? okc('ส่งแล้ว ' + th(po[0].at.slice(0, 10))) : noc('ยังไม่ส่ง') + ' <a class="mw-go" href="' + ttLink('onepage', id) + '" target="_top">ส่งเลย</a>') + '</div>';
+    var plan = '<div class="mw-sec" style="border-left-color:#2563EB"><h4>📘 แผนการสอน</h4>' +
+      row('แผนการสอน (ปกติ) · ภาคเรียน ' + esc(MW.W.term.label || ''), pn.length ? okc('ส่งแล้ว ' + th(pn[0].at.slice(0, 10))) : noc('ยังไม่ส่ง') + ' <a class="mw-go" href="' + ttLink('plans', id) + '" target="_top">ส่งเลย</a>') +
+      row('แผนหน้าเดียว + MakerSpace · ' + mLabel(M), po.length ? okc('ส่งแล้ว ' + th(po[0].at.slice(0, 10))) : noc('ยังไม่ส่ง') + ' <a class="mw-go" href="' + ttLink('onepage', id) + '" target="_top">ส่งเลย</a>') + '</div>';
     if (isT) { cnt[pn.length ? 'ok' : 'no']++; cnt[po.length ? 'ok' : 'no']++; }
     // มอบหมายงาน
     var A = asgOf(nm).map(function (x) { x._st = state(x, nm); return x; }), order = { late: 0, soon: 1, open: 2, done: 3 };
@@ -436,7 +438,7 @@
     }).catch(function () { MW.mine = { name: nm, err: 'โหลดสถานะการส่งงานไม่ได้' }; }).then(function () { MW.loadingMine = ''; mwRender(); });
   }
   function mwAll() {
-    var h = '<div class="mw-top"><label class="asg-f" style="flex:0 1 220px">แผนการสอน' + monthSel('mwMonth2') + '</label><label class="asg-f" style="flex:0 1 220px">แสดง<select id="mwFil"><option value="">ครูทุกคน</option><option value="pend"' + (MW.filter === 'pend' ? ' selected' : '') + '>เฉพาะคนที่ยังค้าง</option></select></label>' +
+    var h = '<div class="mw-top"><label class="asg-f" style="flex:0 1 220px">แผนหน้าเดียวของเดือน' + monthSel('mwMonth2') + '</label><label class="asg-f" style="flex:0 1 220px">แสดง<select id="mwFil"><option value="">ครูทุกคน</option><option value="pend"' + (MW.filter === 'pend' ? ' selected' : '') + '>เฉพาะคนที่ยังค้าง</option></select></label>' +
       '<button class="asg-btn gh" data-mw="print" style="align-self:flex-end">🖨️ พิมพ์สรุป</button></div>';
     if (!MW.sum) { mwSum(); return h + '<div class="asg-empty">กำลังโหลดภาพรวม…</div>'; }
     if (MW.sum.err) h += '<div class="asg-s" style="color:#B91C1C">' + esc(MW.sum.err) + '</div>';
@@ -456,7 +458,7 @@
     var avg = rows.length ? Math.round(rows.reduce(function (n, r) { return n + r.pct; }, 0) / rows.length) : 0;
     h += '<div class="asg-stats"><div><b style="color:#2563EB">' + MW.W.teachers.length + '</b>ครูทั้งหมด</div><div><b style="color:#047857">' + rows.filter(function (r) { return r.pct === 100; }).length + '</b>ส่งครบ</div><div><b style="color:#B91C1C">' + rows.filter(function (r) { return r.pct < 100; }).length + '</b>ยังมีงานค้าง</div><div><b style="color:#7C3AED">' + avg + '%</b>ความครบถ้วนเฉลี่ย</div></div>';
     var c = function (b) { return b ? '<td class="mw-ok">✅</td>' : '<td class="mw-no">❌</td>'; };
-    h += '<div class="mw-wrap" id="mwPrint"><div class="mw-ph">ภาพรวมงานครู โรงเรียนวัดแสนเกษม · แผนการสอนเดือน' + mLabel(M) + ' · ข้อมูล ณ ' + th(MW.W.today) + '</div><table class="mw-t"><tr><th>ครู</th><th>แผนปกติ<br>' + esc(mLabel(M).split(' ')[0]) + '</th><th>แผนหน้าเดียว<br>+MakerSpace</th><th>มอบหมายงาน<br>(ค้าง)</th><th>ติดตามงาน</th><th>รายงาน<br>โครงการ</th><th>รายงาน<br>อบรม</th><th>ครบถ้วน</th></tr>' +
+    h += '<div class="mw-wrap" id="mwPrint"><div class="mw-ph">ภาพรวมงานครู โรงเรียนวัดแสนเกษม · ภาคเรียน ' + esc(MW.W.term.label || '') + ' · แผนหน้าเดียวเดือน' + mLabel(M) + ' · ข้อมูล ณ ' + th(MW.W.today) + '</div><table class="mw-t"><tr><th>ครู</th><th>แผนปกติ<br>ภาคเรียน ' + esc(MW.W.term.label || '') + '</th><th>แผนหน้าเดียว+MakerSpace<br>' + esc(mLabel(M).split(' ')[0]) + '</th><th>มอบหมายงาน<br>(ค้าง)</th><th>ติดตามงาน</th><th>รายงาน<br>โครงการ</th><th>รายงาน<br>อบรม</th><th>ครบถ้วน</th></tr>' +
       (rows.length ? rows.map(function (r) {
         var col = r.pct === 100 ? '#047857' : r.pct >= 70 ? '#D97706' : '#B91C1C';
         return '<tr><td class="mw-n"><a href="#" data-mw="me:' + encodeURIComponent(r.t.name) + '">' + esc(r.t.name) + '</a></td>' + c(r.pn) + c(r.po) +
@@ -500,10 +502,17 @@
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร') +
       A('#', '📋', 'ติดตามการส่งงานครู', ' data-mw="track" id="mwTrack"') + A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
       '<div class="h">🏫 ข้อมูลโรงเรียน</div><div class="g">' + A(TT + '?page=events', '📆', 'ปฏิทินปฏิบัติงาน') + A(TT + '?page=acts', '🗓️', 'ตารางกิจกรรมออนไลน์') + A(TT + '?page=groups', '👥', 'กลุ่มกิจกรรม/ผู้รับเช็ค') + A(TT + '?page=prduty', '📣', 'เวรสื่อประชาสัมพันธ์') +
-      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร') + '<a href="#" data-asg="admin"><span>⚙️</span>Admin</a></div></div>';
+      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร') + '<a href="#" data-asg="admin"><span>⚙️</span>Admin</a></div>' +
+      '<div id="mwLinks"></div></div>';
     var old = links.querySelector('.g'), hh = links.querySelector('.h');
     if (old) old.style.display = 'none'; if (hh) hh.style.display = 'none';
     links.insertAdjacentHTML('beforeend', html);
+    // 🔗 ลิงก์ที่ใช้บ่อย (Admin เพิ่ม/แก้ที่ระบบตารางสอน → เมนู ลิงก์ที่ใช้บ่อย)
+    fetch(TT + '?api=links').then(function (r) { return r.json(); }).then(function (j) {
+      var L = j.ok ? j.data.items : [], el = document.getElementById('mwLinks'); if (!el) return;
+      el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a href="' + TT + '?page=admin&to=links" target="_top" style="font-size:12.5px;font-weight:400;margin-left:6px">จัดการลิงก์ (Admin)</a></div><div class="g">' +
+        (L.length ? L.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์ — Admin เพิ่มได้ที่ "จัดการลิงก์"</span>') + '</div>';
+    }).catch(function () {});
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
   }
   // Admin เข้าครั้งเดียว: เข้า Admin ระบบติดตามแล้ว ใช้กับมอบหมายงานได้เลย
