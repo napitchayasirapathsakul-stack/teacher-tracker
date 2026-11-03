@@ -6,7 +6,8 @@
 (function () {
   var API = 'https://script.google.com/macros/s/AKfycby8sOIXP7zEzWaunedJHsI2QhRF_lNp3gpAlKSlLa7gs6mR8GgKujSsT54f4y0bgPSh7Q/exec';
   var MS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  var S = { teachers: [], G: [], open: false, tab: 'me', me: '', pw: '', form: null, busy: false, who: '', old: false };
+  var S = { teachers: [], G: [], open: false, tab: 'me', me: '', pw: '', form: null, busy: false, who: '', old: false, acts: null, loaded: false };
+  var TT = 'https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec';
   function get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function put(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function sget(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -16,6 +17,32 @@
   function today() { return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10); }
   function days(u) { return Math.round((new Date(u + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 864e5); }
   function short(n) { return String(n).replace(/^(นางสาว|นาง|นาย)\s*/, '').split(' ')[0]; }
+  // ---------- กิจกรรมออนไลน์ (จากระบบตารางสอน · ดูได้ทุกคน) ----------
+  function first(n) { return String(n || '').replace(/^(นางสาว|นาง|นาย|ว่าที่\s*ร\.?ต\.?\s*(หญิง)?)\s*/, '').split(' ')[0]; }
+  function actMine(x, name) {
+    var txt = (x.people || '') + ' ' + (x.note || ''), f = first(name);
+    if (/ครูทุกคน|ครูทั้งหมด|คณะครู|ทุกคน/.test(txt)) return true;
+    if (f && txt.indexOf(f) >= 0) return true;
+    var t = ((S.acts && S.acts.teachers) || []).filter(function (q) { return first(q.name) === f; })[0], sh = t ? String(t.short || '').replace(/^ครู/, '') : '';
+    return sh.length > 1 && txt.indexOf(sh) >= 0;
+  }
+  function loadActs() {
+    if (S.acts) return Promise.resolve(S.acts);
+    return fetch(TT + '?api=acts').then(function (r) { return r.json(); }).then(function (j) { S.acts = j.ok ? j.data : { items: [], teachers: [], err: true }; return S.acts; })
+      .catch(function () { S.acts = { items: [], teachers: [], err: true }; return S.acts; });
+  }
+  function actsBlock(name, max) {
+    if (!S.acts) return '<div class="asg-s">กำลังโหลดกิจกรรมออนไลน์…</div>';
+    if (S.acts.err) return '<div class="asg-s">โหลดกิจกรรมออนไลน์ไม่ได้ (ระบบตารางสอนต้องอัปเดตเป็นฉบับล่าสุด)</div>';
+    var td = today(), L = S.acts.items.filter(function (x) { return x.date >= td && actMine(x, name); });
+    var h = L.length ? L.slice(0, max || 10).map(function (x) {
+      return '<div class="asg-act"><span class="asg-ad">' + th(x.date) + (x.time ? '<br><small>' + esc(x.time) + '</small>' : '') + '</span><span><b>' + esc(x.title) + '</b>' +
+        (x.people ? '<br><small>👥 ' + esc(x.people) + '</small>' : '') + (x.place ? '<br><small>📍 ' + esc(x.place) + '</small>' : '') + (x.note ? '<br><small>📝 ' + esc(x.note) + '</small>' : '') + '</span></div>';
+    }).join('') : '<div class="asg-s">ไม่มีกิจกรรมออนไลน์ที่จะถึง</div>';
+    if (L.length > (max || 10)) h += '<div class="asg-s">และอีก ' + (L.length - (max || 10)) + ' รายการ</div>';
+    return h + '<a class="asg-btn gh" style="display:inline-block;text-decoration:none;color:inherit" href="' + TT + '?page=acts" target="_top">🗓️ ดูตารางกิจกรรมออนไลน์ทั้งหมด</a>';
+  }
+
   function post(o) {
     return fetch(API, { method: 'POST', body: JSON.stringify(o) }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.ok) throw new Error({ auth: 'รหัสผ่านผู้บริหารไม่ถูกต้อง', bad: 'ข้อมูลไม่ครบหรือไม่ถูกต้อง', notfound: 'ไม่พบรายการ (อาจถูกลบแล้ว)', server: 'ระบบขัดข้อง ลองใหม่อีกครั้ง' }[j.err] || 'บันทึกไม่สำเร็จ');
@@ -102,13 +129,15 @@
         (admin ? '<button class="asg-btn ok" data-asg="newfor:' + encodeURIComponent(nm) + '">＋ มอบหมายงานให้ครูคนนี้</button>' : '') + '</div>';
       h += '<div class="asg-t" style="font-size:19px;margin-top:8px">' + esc(nm) + '</div>';
       h += '<div class="asg-stats"><div><b style="color:#2563EB">' + o.all + '</b>งานทั้งหมด</div><div><b style="color:#7C3AED">' + o.unack + '</b>ยังไม่รับทราบ</div><div><b style="color:#B91C1C">' + o.late + '</b>เลยกำหนด</div><div><b style="color:#047857">' + o.done + '</b>เสร็จแล้ว</div></div>';
-      if (!mine.length) return h + '<div class="asg-empty">ยังไม่มีงานที่ได้รับมอบหมาย</div>';
+      var actH = '<div class="asg-card" style="border-left-color:#0891B2"><b>🗓️ กิจกรรมออนไลน์ที่จะถึง</b>' + actsBlock(nm, 8) + '</div>';
+      if (!S.acts) loadActs().then(render);
+      if (!mine.length) return h + '<div class="asg-empty">ยังไม่มีงานที่ได้รับมอบหมาย</div>' + actH;
       return h + mine.map(function (x) {
         var g = x.st[nm] || {};
         return card(x, head(x, x._st, x._st === 'done' ? 'เสร็จแล้ว' : dueText(x)) +
           '<div class="asg-s">' + (g.k ? '👍 รับทราบแล้ว ' + esc(g.k.slice(0, 16)) : '❔ ยังไม่รับทราบ') + (g.d ? ' · ✅ เสร็จ ' + esc(String(g.d).slice(0, 10)) : '') + '</div>' +
           (admin ? '<div class="asg-tools"><button class="asg-btn ' + (g.d ? 'ok' : 'gh') + '" data-asg="done:' + x.id + ':' + (g.d ? 0 : 1) + ':' + encodeURIComponent(nm) + '">' + (g.d ? '✅ เสร็จแล้ว (กดเพื่อยกเลิก)' : 'บันทึกว่าเสร็จ') + '</button><button class="asg-btn gh" data-asg="edit:' + x.id + '">✏️ แก้ไขงาน</button></div>' : ''));
-      }).join('');
+      }).join('') + actH;
     }
     var h2 = '<div class="asg-s" style="margin:6px 0">กดชื่อครูเพื่อดูงานที่ได้รับมอบหมายรายบุคคล</div><div class="asg-ppl">';
     h2 += S.teachers.map(function (t) {
@@ -140,7 +169,7 @@
   }
   function viewAdm() {
     if (!S.pw) return '<div class="asg-card"><div class="asg-s" style="color:#1D4ED8">การเพิ่ม/แก้ไขงาน ต้องเข้าสู่ระบบที่แท็บนี้ก่อน (แยกจากปุ่ม Admin ของระบบติดตาม) ใช้รหัสผ่านเดียวกัน</div><label class="asg-f">รหัสผ่านผู้บริหาร (รหัสเดียวกับระบบติดตาม)<input type="password" id="asgPw" autocomplete="current-password"></label><button class="asg-btn ok" data-asg="login">เข้าสู่ระบบ</button></div>';
-    var f = S.form, h = '<div class="asg-tools"><button class="asg-btn gh" data-asg="logout">ออกจากระบบผู้บริหาร</button>' + (f ? '' : '<button class="asg-btn ok" data-asg="new">＋ มอบหมายงาน</button>') + '</div>';
+    var f = S.form, h = '<div class="asg-tools"><button class="asg-btn gh" data-asg="logout">ออกจากระบบผู้บริหาร</button>' + (f ? '' : '<button class="asg-btn ok" data-asg="new">＋ มอบหมายงาน</button><button class="asg-btn gh" data-asg="migrate" title="คัดลอกงานจาก ตารางงาน/ปฏิทินเดิม มาไว้ที่บันทึกมอบหมายงาน">📥 ย้ายงานจากปฏิทินเดิม</button>') + '</div>';
     if (f) {
       h += '<div class="asg-card asg-form"><b>' + (f.id ? '✏️ แก้ไขงาน' : '＋ มอบหมายงาน') + '</b>' +
         '<div class="asg-row"><label class="asg-f">วันที่มอบหมาย<input type="date" id="asgD" value="' + esc(f.d) + '"></label><label class="asg-f">กำหนดส่ง *<input type="date" id="asgU" value="' + esc(f.u) + '"></label></div>' +
@@ -156,7 +185,7 @@
   // ---------- การทำงาน ----------
   function load() {
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
-    return Promise.all([post({ a: 'teachers' }), g]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; if (S.me && S.teachers.indexOf(S.me) < 0) S.me = ''; render(); });
+    return Promise.all([post({ a: 'teachers' }), g]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.loaded = true; if (S.me && S.teachers.indexOf(S.me) < 0) S.me = ''; render(); teacherView(true); });
   }
   function click(ev) {
     var el = ev.target.closest('[data-asg]'); if (!el) return;
@@ -175,7 +204,7 @@
       return;
     }
     if (a === 'tab') { S.tab = p[1]; if (p[1] === 'ppl') S.who = ''; return render(); }
-    if (a === 'who') { S.tab = 'ppl'; S.who = decodeURIComponent(p.slice(1).join(':')); render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (a === 'who') { S.open = true; S.tab = 'ppl'; S.who = decodeURIComponent(p.slice(1).join(':')); render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'copy') {
       var lk = plink(decodeURIComponent(p.slice(1).join(':')));
       var ok = function () { toast('คัดลอกลิงก์แล้ว ส่งให้ครูทางไลน์ได้เลย'); };
@@ -192,6 +221,8 @@
     if (S.busy) return;
     var job = null;
     if (a === 'ack') job = post({ a: 'asgack', id: p[1], name: S.me }).then(function () { toast('รับทราบงานแล้ว'); });
+    if (a === 'ackf') job = post({ a: 'asgack', id: p[1], name: decodeURIComponent(p.slice(2).join(':')) }).then(function () { toast('รับทราบงานแล้ว'); });
+    if (a === 'migrate') job = migrate();
     if (a === 'login') { var pw = document.getElementById('asgPw').value; job = post({ a: 'all', pw: pw }).then(function () { S.pw = pw; sput('asg_pw', pw); toast('เข้าสู่ระบบผู้บริหารแล้ว'); }); }
     if (a === 'save') {
       var e = { d: document.getElementById('asgD').value, u: document.getElementById('asgU').value, n: document.getElementById('asgN').value, m: document.getElementById('asgM').value,
@@ -206,6 +237,54 @@
     job.then(load).catch(function (err) { if (/รหัสผ่าน/.test(err.message)) { S.pw = ''; sput('asg_pw', ''); } toast(err.message); render(); }).then(function () { S.busy = false; });
   }
   function change(ev) { if (ev.target.id === 'asgMe') { S.me = ev.target.value; put('asg_me', S.me); render(); } }
+
+  // ---------- หน้า "ข้อมูลรายบุคคล" ของระบบติดตาม: แสดงงานมอบหมาย + กิจกรรมออนไลน์ ----------
+  function teacherView(force) {
+    var tv = document.getElementById('teacher'); if (!tv || tv.hidden) return;
+    var tn = tv.querySelector('.tn'); if (!tn) return;
+    var nm = tn.textContent.trim();
+    var old = [].filter.call(tv.querySelectorAll('.tc'), function (d) { return /งานที่ได้รับมอบหมาย \(ที่จะถึง\)/.test(d.textContent) && !d.id; })[0];
+    var box = document.getElementById('asgTv');
+    if (!box) {
+      if (!old) return;
+      box = document.createElement('div'); box.id = 'asgTv'; old.parentNode.replaceChild(box, old);
+    } else if (old) old.parentNode.removeChild(old);
+    else if (!force && box.getAttribute('data-n') === nm) return;
+    box.setAttribute('data-n', nm);
+    if (nm !== S.me && S.teachers.indexOf(nm) >= 0) { S.me = nm; put('asg_me', nm); badge(); }
+    var mine = S.G.filter(function (x) { return x.a.indexOf(nm) >= 0; }).map(function (x) { x._st = state(x, nm); return x; });
+    var order = { late: 0, soon: 1, open: 2, done: 3 };
+    mine.sort(function (a, b) { return order[a._st] - order[b._st] || (a.u < b.u ? -1 : 1); });
+    var open = mine.filter(function (x) { return x._st !== 'done'; }), done = mine.length - open.length;
+    var h = '<div class="tc asg-tv"><b>📌 งานที่ได้รับมอบหมาย</b> <span style="color:var(--mu,#6B7280);font-size:13px">ค้าง ' + open.length + ' · เสร็จแล้ว ' + done + '</span>';
+    if (!S.loaded) h += '<p class="asg-s">กำลังโหลด…</p>';
+    else if (!open.length) h += '<p class="asg-s">ไม่มีงานค้าง 🎉</p>';
+    else h += open.map(function (x) {
+      var g = x.st[nm] || {};
+      return '<div class="row" style="align-items:flex-start"><span><span class="asg-b" style="background:' + BG[x._st] + ';color:' + COL[x._st] + '">' + esc(dueText(x)) + '</span><br><b>' + esc(x.n) + '</b>' +
+        '<br><small>มอบหมาย ' + th(x.d) + ' · กำหนดส่ง ' + th(x.u) + '</small>' + (x.m ? '<br><small style="white-space:pre-line">' + esc(x.m) + '</small>' : '') + '</span>' +
+        (g.k ? '<span class="asg-ok">👍 รับทราบแล้ว</span>' : '<button class="asg-btn ok" style="margin:0" data-asg="ackf:' + x.id + ':' + encodeURIComponent(nm) + '">👍 รับทราบ</button>') + '</div>';
+    }).join('');
+    h += '<div class="bt"><button class="o" data-asg="who:' + encodeURIComponent(nm) + '" onclick="window.scrollTo(0,0)">📌 ดูงานทั้งหมดในบันทึกมอบหมายงาน</button></div></div>';
+    h += '<div class="tc asg-tv"><b>🗓️ กิจกรรมออนไลน์ที่จะถึง</b>' + actsBlock(nm, 10) + '</div>';
+    box.innerHTML = h;
+    if (!S.acts) loadActs().then(function () { teacherView(true); });
+  }
+  function migrate() {
+    if (!window.confirm('คัดลอกงานจาก "ตารางงาน/ปฏิทิน" เดิม มาไว้ที่บันทึกมอบหมายงาน?\n(งานที่มีชื่อและวันที่ซ้ำกับที่มีอยู่แล้วจะข้าม · ปฏิทินเดิมไม่ถูกลบ)')) return null;
+    return post({ a: 'events' }).then(function (j) {
+      var have = {}; S.G.forEach(function (x) { have[x.n + '|' + x.d] = 1; });
+      var L = (j.ev || []).filter(function (e) { return e.n && e.d && !have[e.n + '|' + e.d]; }).map(function (e) {
+        var a = (e.a || []).indexOf('ALL') >= 0 ? S.teachers.slice() : (e.a || []).filter(function (n) { return S.teachers.indexOf(n) >= 0; });
+        var m = [e.t ? 'เวลา ' + e.t : '', e.p ? 'สถานที่ ' + e.p : '', e.x ? 'ร่วมกับ ' + e.x : '', e.m || ''].filter(Boolean).join(' · ');
+        return { d: e.d, u: e.u && e.u >= e.d ? e.u : e.d, n: String(e.n).slice(0, 200), m: m.slice(0, 2000), a: a };
+      }).filter(function (e) { return e.a.length; });
+      if (!L.length) { toast('ไม่มีงานใหม่ให้ย้าย (ย้ายครบแล้ว)'); return; }
+      var i = 0;
+      function next() { if (i >= L.length) { toast('ย้ายงานแล้ว ' + L.length + ' รายการ'); return; } toast('กำลังย้าย ' + (i + 1) + '/' + L.length + '…'); return post({ a: 'asgsave', pw: S.pw, e: L[i++] }).then(next); }
+      return next();
+    });
+  }
 
   function init() {
     S.me = get('asg_me'); S.pw = sget('asg_pw');
@@ -231,6 +310,9 @@
       '#asgAdm{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:98;align-items:center;justify-content:center;padding:16px}.asg-adm-box{background:#fff;color:#111;border-radius:16px;padding:16px;max-width:420px;width:100%}' +
       '.asg-adm-opt{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:12px;margin-top:10px;text-decoration:none;color:#111}.asg-adm-opt:hover{background:#f1f5f9}.asg-adm-opt>span{font-size:28px}.asg-adm-opt small{display:block;color:#6b7280;font-size:13px}' +
       '#asgNb{font-style:normal;background:#DC2626;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:0 7px;margin-left:6px}' +
+      '#tosch,#adsch{display:none!important}' +
+      '.asg-act{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:14px}.asg-act:last-of-type{border:0}.asg-ad{flex:0 0 74px;font-weight:700;color:#0891B2;font-size:13px}.asg-act small{color:#6B7280}' +
+      '.asg-tv .asg-act small{color:var(--mu,#6B7280)}.asg-tv .asg-s{color:var(--mu,#6B7280)}' +
       '@media(max-width:560px){.asg-stats{grid-template-columns:1fr 1fr}.asg-pp>div{grid-template-columns:1fr auto}.asg-pp>div>span:nth-child(2){grid-row:2}}';
     document.head.appendChild(css);
     var links = document.querySelector('.sks-links'), anchor = document.getElementById('asgBox');
@@ -238,8 +320,12 @@
     var grid = links ? (document.getElementById('sksTrack') || links.querySelector('a')) : null;
     if (grid && grid.parentNode) grid.parentNode.appendChild(btn);
     // ปุ่มเมนูเพิ่มเติม (เพิ่มอัตโนมัติ ไม่ต้องแก้ index.html) + ปุ่ม Admin รวม
-    var TT = 'https://script.google.com/macros/s/AKfycbxcOJT-I3bpSGXQphtBv-lC9AHwo0IAcb2WK-7YddeiChbo00rLNEu_ZmaLlG-dPSNj/exec';
     if (grid && grid.parentNode) {
+      var dl = grid.parentNode.querySelector('a[href*="page=daily"]');
+      if (!grid.parentNode.querySelector('a[href*="page=subtoday"]')) {
+        var st = document.createElement('a'); st.href = TT + '?page=subtoday'; st.target = '_top'; st.innerHTML = '<span>📢</span>จัดสอนแทนวันนี้';
+        if (dl && dl.nextSibling) grid.parentNode.insertBefore(st, dl.nextSibling); else grid.parentNode.appendChild(st);
+      }
       [['acts', '🗓️', 'ตารางกิจกรรมออนไลน์'], ['org', '🏛️', 'โครงสร้างการบริหาร'], ['docs', '📂', 'ดาวน์โหลดเอกสาร']].forEach(function (x) {
         if (grid.parentNode.querySelector('a[href*="page=' + x[0] + '"]')) return;
         var a2 = document.createElement('a'); a2.href = TT + '?page=' + x[0]; a2.target = '_top'; a2.innerHTML = '<span>' + x[1] + '</span>' + x[2]; grid.parentNode.appendChild(a2);
@@ -267,7 +353,9 @@
       var b2 = document.createElement('button'); b2.id = 'asgAdmBtn'; b2.type = 'button'; b2.className = lo.className; b2.setAttribute('data-asg', 'openadm'); b2.textContent = '📌 มอบหมายงาน (เพิ่ม/แก้ไข)';
       lo.parentNode.appendChild(b2);
     }, 1500);
-    render(); load().catch(function () {});
+    var tvEl = document.getElementById('teacher');
+    if (tvEl && window.MutationObserver) new MutationObserver(function () { teacherView(false); }).observe(tvEl, { childList: true });
+    render(); load().catch(function () {}); loadActs();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
