@@ -75,14 +75,38 @@
     });
     return c;
   }
+  // แจ้งเตือนของทุกคน: ใครยังไม่รับทราบ / เลยกำหนด (แสดงหน้าแรก ทุกคนเห็น)
+  function allPending() {
+    var M = {};
+    S.G.forEach(function (x) {
+      x.a.forEach(function (z) {
+        var g = x.st[z] || {}; if (g.d) return;
+        var d = days(x.u), m = M[z] || (M[z] = { unack: 0, late: 0, soon: 0 });
+        if (!g.k) m.unack++; if (d < 0) m.late++; else if (d <= 2) m.soon++;
+      });
+    });
+    return M;
+  }
+  function disp(n) {
+    var p = (S.people || []).filter(function (q) { return q.name === n; })[0];
+    if (S.teachers.indexOf(n) >= 0 || (p && p.grp === 'ข้าราชการครู')) return 'ครู' + short(n);
+    return p && p.nick ? p.nick : short(n);
+  }
   function badge() {
-    var c = counts(), n = c.unack + c.late, b = document.getElementById('asgNb'), ban = document.getElementById('asgBan');
-    if (b) { b.textContent = n; b.style.display = n ? '' : 'none'; }
-    if (ban) {
-      var parts = []; if (c.unack) parts.push('ยังไม่รับทราบ <b>' + c.unack + '</b> งาน'); if (c.late) parts.push('<b style="color:#B91C1C">เลยกำหนด ' + c.late + '</b>'); if (c.soon) parts.push('ใกล้ครบกำหนด <b>' + c.soon + '</b>');
-      ban.innerHTML = parts.length && !S.open ? '🔔 ' + esc(S.me) + ': ' + parts.join(' · ') + ' — <u>ดูงาน</u>' : '';
-      ban.style.display = parts.length && !S.open ? '' : 'none';
-    }
+    var M = allPending(), names = Object.keys(M), tot = 0;
+    names.forEach(function (n) { tot += M[n].unack + M[n].late; });
+    var b = document.getElementById('asgNb'), ban = document.getElementById('asgBan');
+    if (b) { b.textContent = tot; b.style.display = tot ? '' : 'none'; }
+    if (!ban) return;
+    var chip = function (n, v, col, bg) { return '<a href="#" class="asg-chip" style="background:' + bg + ';color:' + col + '" data-asg="who:' + encodeURIComponent(n) + '" title="' + esc(n) + '">' + esc(disp(n)) + ' <b>' + v + '</b></a>'; };
+    var un = names.filter(function (n) { return M[n].unack; }).sort(function (a, b) { return M[b].unack - M[a].unack; });
+    var lt = names.filter(function (n) { return M[n].late; }).sort(function (a, b) { return M[b].late - M[a].late; });
+    var h = '';
+    if (lt.length) h += '<div class="asg-bl"><span>⚠️ <b>เลยกำหนดส่ง</b> (' + lt.length + ' คน):</span> ' + lt.map(function (n) { return chip(n, M[n].late, '#991B1B', '#FEE2E2'); }).join('') + '</div>';
+    if (un.length) h += '<div class="asg-bl"><span>🔔 <b>ยังไม่รับทราบงาน</b> (' + un.length + ' คน):</span> ' + un.map(function (n) { return chip(n, M[n].unack, '#78350F', '#FDE68A'); }).join('') + '</div>';
+    if (h) h += '<div class="asg-s" style="margin-top:4px">กดชื่อเพื่อดูงานและกด 👍 รับทราบ · <a href="#" data-asg="open">เปิดบันทึกมอบหมายงาน</a></div>';
+    ban.innerHTML = h && !S.open ? h : '';
+    ban.style.display = h && !S.open ? '' : 'none';
   }
 
   // ---------- หน้าจอ ----------
@@ -143,6 +167,7 @@
         var g = x.st[nm] || {};
         return card(x, head(x, x._st, x._st === 'done' ? 'เสร็จแล้ว' : dueText(x)) +
           '<div class="asg-s">' + (g.k ? '👍 รับทราบแล้ว ' + esc(g.k.slice(0, 16)) : '❔ ยังไม่รับทราบ') + (g.d ? ' · ✅ เสร็จ ' + esc(String(g.d).slice(0, 10)) : '') + '</div>' +
+          (!g.k && !g.d ? '<button class="asg-btn ok" data-asg="ackf:' + x.id + ':' + encodeURIComponent(nm) + '">👍 รับทราบ</button>' : '') +
           (admin ? '<div class="asg-tools"><button class="asg-btn ' + (g.d ? 'ok' : 'gh') + '" data-asg="done:' + x.id + ':' + (g.d ? 0 : 1) + ':' + encodeURIComponent(nm) + '">' + (g.d ? '✅ เสร็จแล้ว (กดเพื่อยกเลิก)' : 'บันทึกว่าเสร็จ') + '</button><button class="asg-btn gh" data-asg="edit:' + x.id + '">✏️ แก้ไขงาน</button></div>' : ''));
       }).join('') + actH;
     }
@@ -509,6 +534,7 @@
       '.asg-ppl{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}.asg-ppl a{display:flex;flex-direction:column;gap:2px;background:#fff;border-radius:12px;padding:10px 12px;text-decoration:none;color:#111;border:1px solid #e5e7eb}.asg-ppl a:hover{border-color:#2563EB;background:#EFF6FF}' +
       '.asg-nm{color:#1D4ED8;text-decoration:none}.asg-nm:hover{text-decoration:underline}' +
       '.asg-grp{grid-column:1/-1;font-weight:700;color:#0a7f45;margin-top:6px;border-bottom:1px solid #e5e7eb;padding-bottom:2px}.asg-grp a{font-weight:400;font-size:12.5px;margin-left:6px}' +
+      '#asgBan{cursor:default!important}.asg-bl{margin:3px 0;line-height:2.1}.asg-chip{display:inline-block;border-radius:999px;padding:1px 10px;margin:0 4px 2px 0;font-size:14px;text-decoration:none;white-space:nowrap}.asg-chip:hover{filter:brightness(.95);text-decoration:underline}' +
       '.asg-empty{background:#fff;border-radius:12px;padding:16px;text-align:center;color:#6B7280}' +
       '#asgToast{display:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;z-index:99;max-width:90vw}' +
       '#asgAdm{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:98;align-items:center;justify-content:center;padding:16px}.asg-adm-box{background:#fff;color:#111;border-radius:16px;padding:16px;max-width:420px;width:100%}' +
@@ -553,7 +579,7 @@
       '<a class="asg-adm-opt" href="' + TT + '?page=admin" target="_top"><span>📅</span><div><b>Admin ระบบตารางสอน</b><small>ตารางสอน สอนแทน รางวัล เอกสาร กิจกรรม เว็บไซต์โรงเรียน</small></div></a>' +
       '<a class="asg-adm-opt" href="#" data-asg="admtrack"><span>📋</span><div><b>Admin ระบบติดตามงาน</b><small>สถานะการส่งงาน ตารางงาน โครงการ มอบหมายงาน</small></div></a></div>';
     document.body.appendChild(am);
-    var ban = document.createElement('div'); ban.id = 'asgBan'; ban.style.display = 'none'; ban.setAttribute('data-asg', 'open');
+    var ban = document.createElement('div'); ban.id = 'asgBan'; ban.style.display = 'none';
     if (!anchor) { anchor = document.createElement('div'); anchor.id = 'asgBox'; (links || document.body).insertAdjacentElement(links ? 'afterend' : 'afterbegin', anchor); }
     anchor.parentNode.insertBefore(ban, anchor);
     var t = document.createElement('div'); t.id = 'asgToast'; document.body.appendChild(t);
