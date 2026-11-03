@@ -21,7 +21,12 @@
   function first(n) { return String(n || '').replace(/^(นางสาว|นาง|นาย|ว่าที่\s*ร\.?ต\.?\s*(หญิง)?)\s*/, '').split(' ')[0]; }
   function actMine(x, name) {
     var txt = (x.people || '') + ' ' + (x.note || ''), f = first(name);
-    if (/ครูทุกคน|ครูทั้งหมด|คณะครู|ทุกคน/.test(txt)) return true;
+    var isT = S.teachers.indexOf(name) >= 0 || ((S.people || []).filter(function (q) { return q.name === name; })[0] || {}).grp === 'ข้าราชการครู';
+    if (/บุคลากรทุกคน/.test(txt) || /ทุกคน/.test(txt.replace(/ครูทุกคน|ครูทั้งหมด|คณะครู/g, ''))) return true;
+    if (isT && /ครูทุกคน|ครูทั้งหมด|คณะครู/.test(txt)) return true;
+    var pp = (S.people || []).filter(function (q) { return q.name === name; })[0];
+    if (pp && pp.grp === 'ผู้บริหาร' && /ผู้บริหาร/.test(txt)) return true;
+    if (pp && pp.nick && String(pp.nick).length > 2 && txt.indexOf(pp.nick) >= 0) return true;
     if (f && txt.indexOf(f) >= 0) return true;
     var t = ((S.acts && S.acts.teachers) || []).filter(function (q) { return first(q.name) === f; })[0], sh = t ? String(t.short || '').replace(/^ครู/, '') : '';
     return sh.length > 1 && txt.indexOf(sh) >= 0;
