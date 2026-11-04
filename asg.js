@@ -533,7 +533,7 @@
     var lim = Date.parse(td + 'T00:00:00Z') + 14 * 864e5; L = L.filter(function (x) { return Date.parse(x.date + 'T00:00:00Z') <= lim || x.date < td; });
     if (!L.length) { el.innerHTML = '<div class="up-wrap up-none">✅ ไม่มีงานหรือกิจกรรมในอีก 14 วันข้างหน้า</div>'; return; }
     var TAG = { event: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], act: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], asg: ['📌 กำหนดส่งงาน', '#B91C1C'] };
-    var seenK = {}; L = L.filter(function (x) { var k = x.date + '|' + String(x.title).replace(/[\s.]/g, '').slice(0, 8); if (seenK[k]) return false; seenK[k] = 1; return true; });
+    var seenK = {}; L = L.filter(function (x) { var k = x.date + '|' + String(x.title).replace(/[\s.]/g, ''); if (seenK[k]) return false; seenK[k] = 1; return true; });
     var dd = function (x) { var d = days(x.date); return x.date < td ? 'กำลังดำเนินการ' : d === 0 ? 'วันนี้!' : d === 1 ? 'พรุ่งนี้' : 'อีก ' + d + ' วัน'; };
     var lvl = function (x) { var d = days(x.date); return d <= 0 ? 'u0' : d <= 2 ? 'u1' : d <= 7 ? 'u2' : 'u3'; };
     var dt = function (x) { var p = x.date.split('-').map(Number), w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); return { d: p[2], m: TMS[p[1] - 1], w: TWD[w] }; };
