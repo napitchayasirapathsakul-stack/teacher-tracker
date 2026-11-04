@@ -590,7 +590,7 @@
     var el = document.getElementById('nwBar');
     if (el) {
       // แถบสั้น 1 บรรทัด (ไม่แสดงรายการซ้ำ — รายละเอียดดูจากตัวเลขแดงที่เมนู)
-      el.innerHTML = tot ? '<div class="nw-wrap"><div class="nw-head"><b>🔔 มีของใหม่ <span class="nw-n">' + tot + '</span></b><a href="#" data-nw="all">✓ อ่านแล้วทั้งหมด</a></div><div class="asg-s">ดูตัวเลขสีแดงที่เมนูด้านล่าง</div></div>' : '';
+      el.innerHTML = tot ? '<div class="nw-wrap"><div class="nw-head"><b>🔔 ใหม่ !!! <span class="nw-n">' + tot + '</span></b><a href="#" data-nw="all">✓ อ่านแล้วทั้งหมด</a></div><div class="asg-s">ดูตัวเลขสีแดงที่เมนูด้านล่าง</div></div>' : '';
     }
     var base = document.title.replace(/^\(\d+\+?\)\s*/, ''); document.title = (tot ? '(' + tot + ') ' : '') + base;
     try { if (navigator.setAppBadge) { if (tot) navigator.setAppBadge(tot); else navigator.clearAppBadge(); } } catch (e) {}
