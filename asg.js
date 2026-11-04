@@ -714,6 +714,7 @@
         (L.length ? L.map(function (x) { return '<a data-nwk="links" data-nwid="' + esc(x.link_id || '') + '" href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์</span>') + '</div>';
     }).catch(function () {});
     loadUp(); nwLoad(); setTimeout(tkLoad, 300);
+    setInterval(function () { var t = tkTerm(); if (t && t !== TKS.term && !tkLoad.busy) { tkLoad.busy = 1; tkLoad().then(function () { tkLoad.busy = 0; }, function () { tkLoad.busy = 0; }); } }, 1500); // ภาคเรียนเปลี่ยน → โหลดชื่อหัวข้องานให้ตรง
     document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
     setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setInterval(nwLoad, 5 * 60 * 1000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { nwLoad(); load().catch(function () {}); } });
     document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
