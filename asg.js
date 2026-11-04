@@ -501,6 +501,14 @@
   var UP = { items: null, more: false };
   function loadUp() { return fetch(TT + '?api=upcoming').then(function (r) { return r.json(); }).then(function (j) { UP.items = j.ok ? j.data.items : []; UP.news = j.ok ? (j.data.news || []) : []; renderNews(); renderUp(); }).catch(function () { UP.items = []; renderUp(); }); }
   // 📢 ประกาศข่าวสาร (Admin เพิ่มที่ระบบตารางสอน → เมนู ประกาศข่าวสาร)
+  function nbFiles(fs) {
+    fs = fs || []; if (!fs.length) return '';
+    var isImg = function (f) { return /^image\//.test(f.mime || '') || /\.(jpe?g|png|gif|webp)$/i.test(f.name || ''); };
+    var vw = function (f) { return 'https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view'; }, dl = function (f) { return 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(f.id); };
+    var im = fs.filter(isImg), ot = fs.filter(function (f) { return !isImg(f); });
+    return (im.length ? '<div class="nb-imgs">' + im.map(function (f) { return '<figure><a href="' + vw(f) + '" target="_blank" rel="noopener"><img loading="lazy" src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(f.id) + '&sz=w1000" alt="' + esc(f.name) + '"></a><a class="nb-dl" href="' + dl(f) + '" target="_blank" rel="noopener">⬇️ ดาวน์โหลดรูป</a></figure>'; }).join('') + '</div>' : '') +
+      (ot.length ? '<div class="nb-files">' + ot.map(function (f) { return '<div>📎 ' + esc(f.name) + ' <a href="' + vw(f) + '" target="_blank" rel="noopener">เปิดดู</a> · <a href="' + dl(f) + '" target="_blank" rel="noopener">⬇️ ดาวน์โหลด</a></div>'; }).join('') + '</div>' : '');
+  }
   function renderNews() {
     var el = document.getElementById('newsBan'); if (!el) return;
     var N = UP.news || [];
@@ -509,7 +517,7 @@
       N.map(function (x, i) {
         var p = x.date.split('-').map(Number);
         return '<details class="nb-it' + (x.level === 'ด่วน' ? ' nb-u' : '') + '"' + (i === 0 ? ' open' : '') + '><summary data-annid="' + esc(x.ann_id) + '">' + (x.level === 'ด่วน' ? '<span class="nb-tag">🚨 ด่วน</span>' : '<span class="nb-new">' + (days(x.date) >= -1 ? 'ใหม่' : p[2] + ' ' + MS[p[1] - 1]) + '</span>') + '<b>' + esc(x.title) + '</b></summary>' +
-          (x.body ? '<div class="nb-b">' + esc(x.body) + '</div>' : '') + (x.link ? '<a class="nb-l" href="' + esc(x.link) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์/เอกสาร</a>' : '') +
+          (x.body ? '<div class="nb-b">' + esc(x.body) + '</div>' : '') + nbFiles(x.files) + (x.link ? '<a class="nb-l" href="' + esc(x.link) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์/เอกสาร</a>' : '') +
           '<div class="nb-m">ประกาศ ' + th(x.date) + (x.by ? ' · ' + esc(String(x.by).replace(/\s*\(.*\)$/, '')) : '') + '</div></details>';
       }).join('') + '</div>';
   }
@@ -703,6 +711,7 @@
       '.nb-wrap{background:#fff;border-radius:16px;padding:10px 14px;margin-bottom:12px;border:3px solid #2563EB;box-shadow:0 4px 14px rgba(37,99,235,.2);color:#111}.nb-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px}.nb-head b{font-size:20px;color:#1D4ED8}.nb-head a{font-size:13px;color:#1D4ED8}' +
       '.nb-it{border-top:1px solid #e5e7eb;padding:7px 2px}.nb-it summary{cursor:pointer;font-size:16px;list-style:none;display:flex;gap:8px;align-items:center}.nb-it summary::-webkit-details-marker{display:none}' +
       '.nb-new{background:#2563EB;color:#fff;border-radius:99px;padding:0 9px;font-size:12px;flex:none}.nb-tag{background:#DC2626;color:#fff;border-radius:99px;padding:0 9px;font-size:12px;flex:none;animation:upPulse 1.6s infinite}.nb-u{background:#FEF2F2;border-radius:10px;padding:8px}.nb-u summary b{color:#B91C1C}' +
+      '.nb-imgs{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 2px 4px}.nb-imgs figure{margin:0;flex:1 1 200px;max-width:420px;text-align:center}.nb-imgs img{width:100%;max-height:380px;object-fit:contain;border-radius:10px;border:1px solid #E5E7EB;background:#fff}.nb-dl,.nb-files a{color:#1D4ED8!important;font-size:14px;border:0!important;padding:0!important;background:none!important;display:inline!important}.nb-files{margin:6px 0 2px 4px;font-size:14.5px;display:flex;flex-direction:column;gap:3px}' +
       '.nb-b{white-space:pre-line;margin:6px 0 2px 4px;font-size:15px}.nb-l{display:inline-block;margin:4px 0 0 4px;color:#1D4ED8!important;font-size:14px;border:0!important;padding:0!important;background:none!important}.nb-m{font-size:12px;color:#6B7280;margin:4px 0 0 4px}' +
       '.nb-empty{display:flex;justify-content:space-between;background:rgba(255,255,255,.08);color:#9CA3AF;border-radius:12px;padding:6px 12px;margin-bottom:10px;font-size:13.5px}.nb-empty a{color:#93C5FD!important;border:0!important;padding:0!important;background:none!important;font-weight:400!important}' +
       '.up-wrap{background:linear-gradient(135deg,#F97316,#E11D48 60%,#BE185D);border-radius:18px;padding:14px;color:#fff;margin-bottom:12px;box-shadow:0 6px 18px rgba(225,29,72,.25)}.up-none{background:linear-gradient(135deg,#059669,#10B981);font-size:16px;font-weight:600}' +
