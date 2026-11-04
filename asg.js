@@ -122,7 +122,7 @@
     if (!S.open) { box.style.display = 'none'; return; }
     box.style.display = '';
     var h = '<div class="asg-head"><b>📌 บันทึกการมอบหมายงาน</b><button data-asg="close" title="ปิด">✕</button></div>';
-    h += '<div class="asg-tabs"><button data-asg="tab:me" class="' + (S.tab === 'me' ? 'on' : '') + '">📌 งานมอบหมายของฉัน</button><button data-asg="tab:all" class="' + (S.tab === 'all' ? 'on' : '') + '">🗂️ งานทั้งหมด</button><button data-asg="tab:ppl" class="' + (S.tab === 'ppl' ? 'on' : '') + '">👥 รายบุคคล</button><button data-asg="tab:adm" class="' + (S.tab === 'adm' ? 'on' : '') + '">🔐 ผู้บริหาร</button></div>';
+    h += '<div class="asg-tabs"><button data-asg="tab:me" class="' + (S.tab === 'me' ? 'on' : '') + '">📌 งานมอบหมายของฉัน</button><button data-asg="tab:all" class="' + (S.tab === 'all' ? 'on' : '') + '">🗂️ งานทั้งหมด</button><button data-asg="tab:ppl" class="' + (S.tab === 'ppl' ? 'on' : '') + '">👥 รายบุคคล</button><button data-asg="tab:adm" class="' + (S.tab === 'adm' ? 'on' : '') + '">✏️ แก้ไข (Admin)</button></div>';
     if (S.old) h += '<div class="asg-card" style="border-left-color:#B91C1C;background:#FEF2F2"><b>⚠️ ระบบติดตาม (Apps Script) ยังไม่ได้อัปเดตโค้ดมอบหมายงาน</b><div class="asg-s">ให้นำไฟล์ ระบบติดตาม_Code.txt ไปวางแทนโค้ดเดิม แล้วกด ทำให้ใช้งานได้ → จัดการการทำให้ใช้งานได้ → แก้ไข → เวอร์ชันใหม่</div></div>';
     if (S.tab === 'me') h += viewMe(); else if (S.tab === 'all') h += viewAll(false); else if (S.tab === 'ppl') h += viewPpl(); else h += viewAdm();
     box.innerHTML = h;
@@ -363,7 +363,7 @@
     var box = document.getElementById('mwBox'); if (!box) return;
     if (!MW.open) { box.style.display = 'none'; return; }
     box.style.display = '';
-    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><button data-mw="close" title="ปิด">✕</button></div>';
+    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + (MW.view === 'all' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
     h += '<div class="asg-tabs"><button data-mw="view:me" class="' + (MW.view === 'me' ? 'on' : '') + '">👤 ของฉัน (รายบุคคล)</button><button data-mw="view:all" class="' + (MW.view === 'all' ? 'on' : '') + '">📊 ภาพรวมทุกคน</button></div>';
     if (!MW.W) { box.innerHTML = h + (MW.err ? '<div class="asg-empty">โหลดข้อมูลไม่ได้: ' + esc(MW.err) + '<br><small>ระบบตารางสอนต้องอัปเดตเป็นฉบับล่าสุด</small></div>' : '<div class="asg-empty">กำลังโหลดข้อมูล…</div>'); return; }
     box.innerHTML = h + (MW.view === 'me' ? mwMe() : mwAll());
@@ -513,8 +513,8 @@
   function renderNews() {
     var el = document.getElementById('newsBan'); if (!el) return;
     var N = UP.news || [];
-    if (!N.length) { el.innerHTML = '<div class="nb-empty"><span>📢 ยังไม่มีประกาศใหม่</span><a href="' + TT + '?page=admin&to=news" target="_top">＋ เพิ่มประกาศ (Admin)</a></div>'; return; }
-    el.innerHTML = '<div class="nb-wrap"><div class="nb-head"><b>📢 ประกาศข่าวสาร</b><span><a href="' + TT + '?page=news" target="_top">ดูทั้งหมด</a> · <a href="' + TT + '?page=admin&to=news" target="_top">＋ เพิ่มประกาศ (Admin)</a></span></div>' +
+    if (!N.length) { el.innerHTML = '<div class="nb-empty"><span>📢 ยังไม่มีประกาศใหม่</span><a class="adm-edit" href="' + TT + '?page=admin&to=news" target="_top">✏️ แก้ไข (Admin)</a></div>'; return; }
+    el.innerHTML = '<div class="nb-wrap"><div class="nb-head"><b>📢 ประกาศข่าวสาร</b><span><a href="' + TT + '?page=news" target="_top">ดูทั้งหมด</a> · <a class="adm-edit" href="' + TT + '?page=admin&to=news" target="_top">✏️ แก้ไข (Admin)</a></span></div>' +
       N.map(function (x, i) {
         var p = x.date.split('-').map(Number);
         return '<details class="nb-it' + (x.level === 'ด่วน' ? ' nb-u' : '') + '"' + (i === 0 ? ' open' : '') + '><summary data-annid="' + esc(x.ann_id) + '">' + (x.level === 'ด่วน' ? '<span class="nb-tag">🚨 ด่วน</span>' : '<span class="nb-new">' + (days(x.date) >= -1 ? 'ใหม่' : p[2] + ' ' + MS[p[1] - 1]) + '</span>') + '<b>' + esc(x.title) + '</b></summary>' +
@@ -657,9 +657,9 @@
       '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a></div>' +
       '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้', ' target="_top" data-sec="subs"') + '</div>' +
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร', ' target="_top" data-sec="awards"') +
-      A('#', '📋', 'ติดตามการส่งงานครู', ' data-mw="track" id="mwTrack"') + A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open" data-sec="asg"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
+      A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open" data-sec="asg"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
       '<div class="h">🏫 ข้อมูลโรงเรียน</div><div class="g">' + A(TT + '?page=news', '📢', 'ประกาศข่าวสาร', ' target="_top" data-sec="news"') + A(TT + '?page=acts', '📅', 'ปฏิทินงานโรงเรียน', ' target="_top" data-sec="acts"') + A(TT + '?page=groups', '👥', 'กลุ่มกิจกรรม/ผู้รับเช็ค') + A(TT + '?page=prduty', '📣', 'เวรสื่อประชาสัมพันธ์') +
-      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร', ' target="_top" data-sec="docs"') + '<a href="#" data-asg="admin"><span>⚙️</span>Admin</a></div>' +
+      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร', ' target="_top" data-sec="docs"') + '</div>' +
       '<div id="mwLinks"></div></div>';
     var old = links.querySelector('.g'), hh = links.querySelector('.h');
     if (old) old.style.display = 'none'; if (hh) hh.style.display = 'none';
@@ -667,8 +667,8 @@
     // 🔗 ลิงก์ที่ใช้บ่อย (Admin เพิ่ม/แก้ที่ระบบตารางสอน → เมนู ลิงก์ที่ใช้บ่อย)
     fetch(TT + '?api=links').then(function (r) { return r.json(); }).then(function (j) {
       var L = j.ok ? j.data.items : [], el = document.getElementById('mwLinks'); if (!el) return;
-      el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a href="' + TT + '?page=admin&to=links" target="_top" style="font-size:12.5px;font-weight:400;margin-left:6px">จัดการลิงก์ (Admin)</a></div><div class="g">' +
-        (L.length ? L.map(function (x) { return '<a data-nwk="links" data-nwid="' + esc(x.link_id || '') + '" href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์ — Admin เพิ่มได้ที่ "จัดการลิงก์"</span>') + '</div>';
+      el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a class="adm-edit" href="' + TT + '?page=admin&to=links" target="_top">✏️ แก้ไข (Admin)</a></div><div class="g">' +
+        (L.length ? L.map(function (x) { return '<a data-nwk="links" data-nwid="' + esc(x.link_id || '') + '" href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์</span>') + '</div>';
     }).catch(function () {});
     loadUp(); nwLoad(); setTimeout(tkLoad, 300);
     document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
@@ -688,6 +688,7 @@
     S.me = get('asg_me'); S.pw = sget('asg_pw');
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
+      '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
       '#asgBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}' +
       '.asg-head{display:flex;justify-content:space-between;align-items:center;font-size:19px;margin-bottom:8px}.asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px}' +
@@ -764,7 +765,6 @@
         if (grid.parentNode.querySelector('a[href*="page=' + x[0] + '"]')) return;
         var a2 = document.createElement('a'); a2.href = TT + '?page=' + x[0]; a2.target = '_top'; a2.innerHTML = '<span>' + x[1] + '</span>' + x[2]; grid.parentNode.appendChild(a2);
       });
-      var ad = document.createElement('a'); ad.href = '#'; ad.setAttribute('data-asg', 'admin'); ad.innerHTML = '<span>⚙️</span>Admin'; grid.parentNode.appendChild(ad);
     }
     var am = document.createElement('div'); am.id = 'asgAdm'; am.style.display = 'none';
     am.innerHTML = '<div class="asg-adm-box"><div class="asg-head"><b>⚙️ เข้าสู่ระบบ Admin</b><button data-asg="admclose">✕</button></div>' +
