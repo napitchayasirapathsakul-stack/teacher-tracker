@@ -102,7 +102,8 @@
     names.forEach(function (n) { tot += M[n].unack + M[n].late; });
     var b = document.getElementById('asgNb'), ban = document.getElementById('asgBan');
     if (b) { b.textContent = tot; b.style.display = tot ? '' : 'none'; }
-    if (!ban) return;
+    if (ban) { ban.style.display = 'none'; ban.innerHTML = ''; }
+    if (!ban || true) return; // แถบ "ยังไม่รับทราบงาน" ซ้ำกับตัวเลขที่เมนูมอบหมายงาน — ซ่อน
     var chip = function (n, v, col, bg) { return '<a href="#" class="asg-chip" style="background:' + bg + ';color:' + col + '" data-asg="who:' + encodeURIComponent(n) + '" title="' + esc(n) + '">' + esc(disp(n)) + ' <b>' + v + '</b></a>'; };
     var un = names.filter(function (n) { return M[n].unack; }).sort(function (a, b) { return M[b].unack - M[a].unack; });
     var lt = names.filter(function (n) { return M[n].late; }).sort(function (a, b) { return M[b].late - M[a].late; });
@@ -559,7 +560,7 @@
   }
   // 🔔 มีอะไรใหม่ — ตัวเลขบนเมนู · แถบสรุป · ตัวเลขบนไอคอนแอป (เครื่องนี้จำว่าเห็นอะไรแล้ว)
   var NW = { data: null, seen: null };
-  var NSEC = [['news', '📢 ประกาศ', TT + '?page=news'], ['subs', '📢 จัดสอนแทน', TT + '?page=subtoday'], ['asg', '📌 งานมอบหมาย', ''], ['acts', '📅 ปฏิทินงาน', TT + '?page=acts'], ['docs', '📂 เอกสาร', TT + '?page=docs'], ['awards', '🏆 รางวัล', TT + '?page=awards'], ['links', '🔗 ลิงก์', '#mwLinks']];
+  var NSEC = [['news', '📢 ประกาศ', TT + '?page=news'], ['subs', '📢 จัดสอนแทน', TT + '?page=subtoday'], ['acts', '📅 ปฏิทินงาน', TT + '?page=acts'], ['docs', '📂 เอกสาร', TT + '?page=docs'], ['awards', '🏆 รางวัล', TT + '?page=awards'], ['links', '🔗 ลิงก์', '#mwLinks']];
   function nwSeen() { if (NW.seen) return NW.seen; try { NW.seen = JSON.parse(localStorage.getItem('nw_seen') || '{}'); } catch (e) { NW.seen = {}; } return NW.seen; }
   function nwSave() { try { localStorage.setItem('nw_seen', JSON.stringify(NW.seen)); } catch (e) {} }
   function nwItems(k) { if (k === 'asg') return S.loaded ? S.G.map(function (x) { return { id: x.id, t: x.n, d: x.d }; }) : null; return NW.data ? NW.data[k] || [] : null; }
@@ -588,9 +589,8 @@
     });
     var el = document.getElementById('nwBar');
     if (el) {
-      el.innerHTML = tot ? '<div class="nw-wrap"><div class="nw-head"><b>🔔 มีอะไรใหม่ <span class="nw-n">' + tot + '</span></b><a href="#" data-nw="all">✓ อ่านแล้วทั้งหมด</a></div>' +
-        rows.slice(0, 8).map(function (r) { return '<a class="nw-row" ' + (r.k === 'asg' ? 'href="#" data-asg="open"' : r.href.charAt(0) === '#' ? 'href="' + r.href + '"' : 'href="' + r.href + '" target="_top"') + ' data-nwk="' + r.k + '" data-nwid="' + esc(r.x.id) + '"><span class="nw-lab">' + r.lab + '</span>' + (r.x.u ? '🚨 ' : '') + esc(r.x.t) + '</a>'; }).join('') +
-        (tot > 8 ? '<div class="asg-s">และอีก ' + (tot - 8) + ' รายการ — ดูตัวเลขแดงที่เมนู</div>' : '') + '</div>' : '';
+      // แถบสั้น 1 บรรทัด (ไม่แสดงรายการซ้ำ — รายละเอียดดูจากตัวเลขแดงที่เมนู)
+      el.innerHTML = tot ? '<div class="nw-wrap"><div class="nw-head"><b>🔔 มีของใหม่ <span class="nw-n">' + tot + '</span></b><a href="#" data-nw="all">✓ อ่านแล้วทั้งหมด</a></div><div class="asg-s">ดูตัวเลขสีแดงที่เมนูด้านล่าง</div></div>' : '';
     }
     var base = document.title.replace(/^\(\d+\+?\)\s*/, ''); document.title = (tot ? '(' + tot + ') ' : '') + base;
     try { if (navigator.setAppBadge) { if (tot) navigator.setAppBadge(tot); else navigator.clearAppBadge(); } } catch (e) {}
