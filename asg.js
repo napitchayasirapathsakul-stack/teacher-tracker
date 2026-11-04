@@ -577,6 +577,47 @@
     sn[k] = id ? (sn[k] || []).filter(function (x) { return cur.indexOf(x) >= 0; }).concat([id]) : cur; nwSave(); nwRender();
   }
   function nwLoad() { return fetch(TT + '?api=pulse').then(function (r) { return r.json(); }).then(function (j) { if (j.ok) { NW.data = j.data; nwRender(); } }).catch(function () {}); }
+  // 🔔 แจ้งเตือนแบบเด้ง (Firebase Cloud Messaging) — ครูกดเปิดครั้งเดียว · ระบบเช็กของใหม่ทุก 10 นาทีแล้วเด้งเตือน + ตัวเลขบนไอคอน
+  var PUSH = { url: 'https://script.google.com/macros/s/AKfycbwskmmW5YzzBnZCTi5q0TkuHEgW6DnIvkvWmw64Ee8xlawg9mJRQ6cdM5c2_0YK9x_MWg/exec',
+    vapid: 'BFsmrvNmbypSxWNjHVVKZMul0GJly7IitnHrAynME2IfEDzhD7YH-AcV8UdtNHPgX9zoW2DFTscI_Ohmxz3iArE',
+    cfg: { apiKey: 'AIzaSyCMsD14OfR04FmPmp0ZY2T3hi4PaEMGKBM', authDomain: 'watsaenkasem-notify.firebaseapp.com', projectId: 'watsaenkasem-notify', storageBucket: 'watsaenkasem-notify.firebasestorage.app', messagingSenderId: '445561003767', appId: '1:445561003767:web:f7e028d26ce1db537f7df2' } };
+  function pushOk() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+  function pushIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent); }
+  function pushStandalone() { return !!(window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); }
+  function pushLoad(src) { return new Promise(function (ok, bad) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { bad(new Error('โหลดไม่สำเร็จ')); }; document.head.appendChild(s); }); }
+  function pushToken() {
+    var V = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    return navigator.serviceWorker.register('sw-push.js').then(function (reg) {
+      return (window.firebase && firebase.messaging ? Promise.resolve() : pushLoad(V + 'firebase-app-compat.js').then(function () { return pushLoad(V + 'firebase-messaging-compat.js'); }))
+        .then(function () { if (!firebase.apps.length) firebase.initializeApp(PUSH.cfg); return navigator.serviceWorker.ready; })
+        .then(function () { return firebase.messaging().getToken({ vapidKey: PUSH.vapid, serviceWorkerRegistration: reg }); });
+    }).then(function (t) {
+      if (!t) throw new Error('ไม่ได้รับรหัสเครื่อง');
+      return fetch(PUSH.url, { method: 'POST', body: JSON.stringify({ a: 'reg', t: t, d: pushIOS() ? 'iOS' : (/Android/i.test(navigator.userAgent) ? 'Android' : 'PC') }) })
+        .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error('ลงทะเบียนไม่สำเร็จ'); put('push_tk', t); put('push_at', String(Date.now())); return t; });
+    });
+  }
+  function pushEnable() {
+    if (!pushOk()) { toast(pushIOS() && !pushStandalone() ? 'iPhone: ต้องเปิดจากไอคอน "ระบบงานโรงเรียน" บนหน้าจอโฮมก่อน (Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม)' : 'เครื่องหรือเบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+    Notification.requestPermission().then(function (p) {
+      if (p !== 'granted') { toast('ยังไม่ได้อนุญาต — เปิดได้ที่ ตั้งค่า → การแจ้งเตือน → ระบบงานโรงเรียน'); return; }
+      toast('กำลังเปิดการแจ้งเตือน…');
+      return pushToken().then(function (t) {
+        pushUi(); toast('✅ เปิดการแจ้งเตือนแล้ว — กำลังส่งข้อความทดสอบ');
+        return fetch(PUSH.url, { method: 'POST', body: JSON.stringify({ a: 'test', t: t }) });
+      });
+    }).catch(function (e) { toast('เปิดการแจ้งเตือนไม่สำเร็จ: ' + ((e && e.message) || e)); });
+  }
+  function pushUi() {
+    var el = document.getElementById('pushBar'); if (!el) return;
+    var on = pushOk() && Notification.permission === 'granted' && get('push_tk');
+    el.innerHTML = on ? '' : '<a href="#" id="pushBtn" class="push-btn">🔔 เปิดการแจ้งเตือน <small>เด้งเตือน + ตัวเลขบนไอคอน เมื่อมีประกาศ งานมอบหมาย สอนแทนใหม่</small></a>';
+  }
+  function pushBadge(n) { try { if (window.caches) caches.open('push-badge').then(function (c) { return c.put('n', new Response(String(n))); }).catch(function () {}); } catch (e) {} }
+  function pushRefresh() { // รหัสเครื่องอาจเปลี่ยน → ส่งใหม่วันละครั้ง
+    try { if (pushOk() && Notification.permission === 'granted' && get('push_tk') && Date.now() - Number(get('push_at') || 0) > 864e5) pushToken().catch(function () {}); } catch (e) {}
+  }
+  document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#pushBtn')) { ev.preventDefault(); pushEnable(); } });
   function nwRender() {
     var tot = 0, rows = [];
     NSEC.forEach(function (sc) {
@@ -594,6 +635,7 @@
     }
     var base = document.title.replace(/^\(\d+\+?\)\s*/, ''); document.title = (tot ? '(' + tot + ') ' : '') + base;
     try { if (navigator.setAppBadge) { if (tot) navigator.setAppBadge(tot); else navigator.clearAppBadge(); } } catch (e) {}
+    pushBadge(tot);
   }
   document.addEventListener('click', function (ev) {
     var a = ev.target.closest('[data-nw="all"]'); if (a) { ev.preventDefault(); NSEC.forEach(function (sc) { nwMark(sc[0]); }); return; }
@@ -653,7 +695,7 @@
   function mwMenu(links) {
     if (!links || document.getElementById('mwMenu')) return;
     var A = function (href, ic, tx, extra) { return '<a href="' + href + '"' + (extra || ' target="_top"') + '><span>' + ic + '</span>' + tx + '</a>'; };
-    var html = '<div id="mwMenu"><div id="nwBar"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
+    var html = '<div id="mwMenu"><div id="pushBar"></div><div id="nwBar"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
       '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a></div>' +
       '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้', ' target="_top" data-sec="subs"') + '</div>' +
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร', ' target="_top" data-sec="awards"') +
@@ -664,6 +706,7 @@
     var old = links.querySelector('.g'), hh = links.querySelector('.h');
     if (old) old.style.display = 'none'; if (hh) hh.style.display = 'none';
     links.insertAdjacentHTML('beforeend', html);
+    pushUi(); pushRefresh();
     // 🔗 ลิงก์ที่ใช้บ่อย (Admin เพิ่ม/แก้ที่ระบบตารางสอน → เมนู ลิงก์ที่ใช้บ่อย)
     fetch(TT + '?api=links').then(function (r) { return r.json(); }).then(function (j) {
       var L = j.ok ? j.data.items : [], el = document.getElementById('mwLinks'); if (!el) return;
@@ -688,6 +731,7 @@
     S.me = get('asg_me'); S.pw = sget('asg_pw');
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
+      '.push-btn{display:block!important;background:linear-gradient(135deg,#7C3AED,#2563EB)!important;color:#fff!important;border:0!important;border-radius:14px!important;padding:10px 14px!important;margin-bottom:10px;font-size:16px;font-weight:700;text-decoration:none!important;text-align:left}.push-btn small{display:block;font-weight:400;font-size:12.5px;opacity:.9}' +
       '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '@media(max-width:600px){.mw-wrap{overflow-x:visible!important}.mw-t{width:100%!important;min-width:0!important;table-layout:fixed;font-size:11.5px}.mw-t th{font-size:10px!important;line-height:1.25;padding:4px 1px!important;word-break:normal;overflow-wrap:anywhere;white-space:normal!important}.mw-t td{padding:4px 1px!important}.mw-t th:first-child,.mw-t td:first-child{width:30%;text-align:left}.mw-t td:first-child,.mw-t td:first-child *{white-space:normal!important;overflow-wrap:anywhere}.mw-t td:first-child{overflow:hidden}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
