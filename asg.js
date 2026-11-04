@@ -647,10 +647,10 @@
   var TKS = { list: null, term: '', edit: null, warn: '' };
   function tkTerm() { return trTerm() || ''; }
   function tkLoad() {
-    var t = tkTerm(); if (!t) return Promise.resolve();
+    var t = tkTerm(); if (!t) { tkLoad.n = (tkLoad.n || 0) + 1; if (tkLoad.n < 30) setTimeout(tkLoad, 500); return Promise.resolve(); }
     return post({ a: 'tasks', t: t }).then(function (j) {
       TKS.list = j.list || []; TKS.term = t; TKS.warn = '';
-      try { if (typeof K !== 'undefined' && j.K && j.K.length) { K = j.K; var ft = document.getElementById('ft'); if (ft) { var v = ft.value; ft.innerHTML = '<option value="">ทุกรายการงาน</option>' + j.K.map(function (k, i) { return '<option value="' + i + '">' + esc(k) + '</option>'; }).join(''); ft.value = v; } } }
+      try { if (typeof K !== 'undefined' && j.K && j.K.length) { K = j.K; var ft = document.getElementById('ft'); if (ft) { var v = ft.value; ft.innerHTML = '<option value="">ทุกรายการงาน</option>' + j.K.map(function (k, i) { return '<option value="' + i + '">' + esc(k) + '</option>'; }).join(''); ft.value = v; } try { if (typeof mx === 'function' && document.getElementById('mx')) mx(); } catch (e2) {} try { if (typeof dash === 'function') dash(); } catch (e3) {} } }
       catch (e) { TKS.warn = 'ยังเปลี่ยนหัวข้อในตารางเดิมไม่ได้ — ต้องแก้ index.html จาก const K= เป็น let K= ก่อน'; }
       try { if (typeof ADM !== 'undefined' && ADM && typeof window.all === 'function') window.all(); } catch (e) {}
       tkRender();
