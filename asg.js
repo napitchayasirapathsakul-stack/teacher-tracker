@@ -533,7 +533,17 @@
     var lim = Date.parse(td + 'T00:00:00Z') + 14 * 864e5; L = L.filter(function (x) { return Date.parse(x.date + 'T00:00:00Z') <= lim || x.date < td; });
     if (!L.length) { el.innerHTML = '<div class="up-wrap up-none">✅ ไม่มีงานหรือกิจกรรมในอีก 14 วันข้างหน้า</div>'; return; }
     var TAG = { event: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], act: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], asg: ['📌 กำหนดส่งงาน', '#B91C1C'] };
-    var seenK = {}; L = L.filter(function (x) { var k = x.date + '|' + String(x.title).replace(/[\s.]/g, ''); if (seenK[k]) return false; seenK[k] = 1; return true; });
+    // ไม่ให้ขึ้นซ้ำ: วันเดียวกัน + ชื่อคล้ายกัน (ข้อความตรงกันต่อเนื่อง ≥ 10 ตัวอักษร) → เหลือรายการเดียว (ปฏิทินปฏิบัติงาน > ปฏิทินที่เพิ่มเอง > งานมอบหมาย)
+    var PRI = { event: 0, act: 1, asg: 2 }, nzT = function (t) { return String(t || '').replace(/[\s.()\-–]/g, ''); };
+    var sim = function (a, b) { if (a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true; var m = 0, p = []; for (var j = 0; j <= b.length; j++) p[j] = 0; for (var i = 1; i <= a.length; i++) { var prev = 0; for (j = 1; j <= b.length; j++) { var t = p[j]; p[j] = a[i - 1] === b[j - 1] ? prev + 1 : 0; if (p[j] > m) m = p[j]; prev = t; } } return m >= 10; };
+    L = L.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : PRI[a.src] - PRI[b.src]; });
+    var keep = []; L.forEach(function (x) {
+      var nx = nzT(x.title), y = keep.filter(function (k) { return k.date === x.date && sim(nzT(k.title), nx); })[0];
+      if (!y) { keep.push(Object.assign({}, x)); return; }
+      if (!y.time && x.time) y.time = x.time; if (!y.place && x.place) y.place = x.place; if (!y.who && x.who) y.who = x.who;
+      if (x.src === 'asg') y.asgId = x.id;
+    });
+    L = keep.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
     var dd = function (x) { var d = days(x.date); return x.date < td ? 'กำลังดำเนินการ' : d === 0 ? 'วันนี้!' : d === 1 ? 'พรุ่งนี้' : 'อีก ' + d + ' วัน'; };
     var lvl = function (x) { var d = days(x.date); return d <= 0 ? 'u0' : d <= 2 ? 'u1' : d <= 7 ? 'u2' : 'u3'; };
     var dt = function (x) { var p = x.date.split('-').map(Number), w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); return { d: p[2], m: TMS[p[1] - 1], w: TWD[w] }; };
