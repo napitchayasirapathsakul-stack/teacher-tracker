@@ -223,7 +223,7 @@
   function load() {
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
     var pp = post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; });
-    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); teacherView(true); });
+    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); teacherView(true); });
   }
   function click(ev) {
     var el = ev.target.closest('[data-asg]'); if (!el) return;
@@ -438,7 +438,7 @@
     var r = S.teachers.indexOf(nm), t = trTerm();
     if (r < 0) { MW.mine = { name: nm, err: 'ไม่พบชื่อในระบบติดตาม (ระบบติดตามต้องอัปเดตโค้ดเพื่อใช้รายชื่อชุดเดียวกัน)' }; MW.loadingMine = ''; return mwRender(); }
     Promise.all([post({ a: 'teacher', r: r, t: t || undefined }), MW.sum ? Promise.resolve({ K: MW.sum.K }) : post({ a: 'pubsum', t: t || undefined }).catch(function () { return null; })]).then(function (x) {
-      var K = (x[1] && x[1].K) || ['เยี่ยมบ้าน', 'การอ่านประจำเดือน', 'วิเคราะห์ผู้เรียน', 'บัญชีนม', 'บัญชีเรียกชื่อ', 'รายงานโครงการ', 'บันทึกหลังแผน (สค.)', 'วิจัยในชั้นเรียน', 'รายงานการอบรม', 'รายงานผลการเรียน'];
+      var K = x[0].K || (x[1] && x[1].K) || ['เยี่ยมบ้าน', 'การอ่านประจำเดือน', 'วิเคราะห์ผู้เรียน', 'บัญชีนม', 'บัญชีเรียกชื่อ', 'รายงานโครงการ', 'บันทึกหลังแผน (สค.)', 'วิจัยในชั้นเรียน', 'รายงานการอบรม', 'รายงานผลการเรียน'];
       MW.mine = { name: nm, s: x[0].s, K: K, auto: x[0].auto || [], term: t };
     }).catch(function () { MW.mine = { name: nm, err: 'โหลดสถานะการส่งงานไม่ได้' }; }).then(function () { MW.loadingMine = ''; mwRender(); });
   }
@@ -508,7 +508,7 @@
     el.innerHTML = '<div class="nb-wrap"><div class="nb-head"><b>📢 ประกาศข่าวสาร</b><span><a href="' + TT + '?page=news" target="_top">ดูทั้งหมด</a> · <a href="' + TT + '?page=admin&to=news" target="_top">＋ เพิ่มประกาศ (Admin)</a></span></div>' +
       N.map(function (x, i) {
         var p = x.date.split('-').map(Number);
-        return '<details class="nb-it' + (x.level === 'ด่วน' ? ' nb-u' : '') + '"' + (i === 0 ? ' open' : '') + '><summary>' + (x.level === 'ด่วน' ? '<span class="nb-tag">🚨 ด่วน</span>' : '<span class="nb-new">' + (days(x.date) >= -1 ? 'ใหม่' : p[2] + ' ' + MS[p[1] - 1]) + '</span>') + '<b>' + esc(x.title) + '</b></summary>' +
+        return '<details class="nb-it' + (x.level === 'ด่วน' ? ' nb-u' : '') + '"' + (i === 0 ? ' open' : '') + '><summary data-annid="' + esc(x.ann_id) + '">' + (x.level === 'ด่วน' ? '<span class="nb-tag">🚨 ด่วน</span>' : '<span class="nb-new">' + (days(x.date) >= -1 ? 'ใหม่' : p[2] + ' ' + MS[p[1] - 1]) + '</span>') + '<b>' + esc(x.title) + '</b></summary>' +
           (x.body ? '<div class="nb-b">' + esc(x.body) + '</div>' : '') + (x.link ? '<a class="nb-l" href="' + esc(x.link) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์/เอกสาร</a>' : '') +
           '<div class="nb-m">ประกาศ ' + th(x.date) + (x.by ? ' · ' + esc(String(x.by).replace(/\s*\(.*\)$/, '')) : '') + '</div></details>';
       }).join('') + '</div>';
@@ -539,17 +539,109 @@
       (L.length > 7 ? '<a class="up-more" href="#" data-up="more">' + (UP.more ? 'ย่อ ▲' : 'ดูทั้งหมด ' + L.length + ' รายการ ▼') + '</a>' : '') + '</div></div></div>';
     el.innerHTML = h;
   }
+  // 🔔 มีอะไรใหม่ — ตัวเลขบนเมนู · แถบสรุป · ตัวเลขบนไอคอนแอป (เครื่องนี้จำว่าเห็นอะไรแล้ว)
+  var NW = { data: null, seen: null };
+  var NSEC = [['news', '📢 ประกาศ', TT + '?page=news'], ['subs', '📢 จัดสอนแทน', TT + '?page=subtoday'], ['asg', '📌 งานมอบหมาย', ''], ['acts', '📅 ปฏิทินงาน', TT + '?page=acts'], ['docs', '📂 เอกสาร', TT + '?page=docs'], ['awards', '🏆 รางวัล', TT + '?page=awards'], ['links', '🔗 ลิงก์', '#mwLinks']];
+  function nwSeen() { if (NW.seen) return NW.seen; try { NW.seen = JSON.parse(localStorage.getItem('nw_seen') || '{}'); } catch (e) { NW.seen = {}; } return NW.seen; }
+  function nwSave() { try { localStorage.setItem('nw_seen', JSON.stringify(NW.seen)); } catch (e) {} }
+  function nwItems(k) { if (k === 'asg') return S.loaded ? S.G.map(function (x) { return { id: x.id, t: x.n, d: x.d }; }) : null; return NW.data ? NW.data[k] || [] : null; }
+  function nwNew(k) {
+    var L = nwItems(k); if (!L) return []; var sn = nwSeen();
+    if (!sn[k]) { // ครั้งแรกในเครื่องนี้: ถือว่าเห็นของเก่าแล้ว (เกิน 2 วัน) — ไม่ให้ตัวเลขท่วม
+      var lim = new Date(Date.now() + 7 * 3600e3 - 2 * 864e5).toISOString().slice(0, 10);
+      sn[k] = L.filter(function (x) { return k === 'subs' ? false : k === 'acts' ? true : !x.d || x.d < lim; }).map(function (x) { return x.id; }); nwSave();
+    }
+    return L.filter(function (x) { return sn[k].indexOf(x.id) < 0; });
+  }
+  function nwMark(k, id) {
+    var L = nwItems(k); if (!L) return; var sn = nwSeen(), cur = L.map(function (x) { return x.id; });
+    sn[k] = id ? (sn[k] || []).filter(function (x) { return cur.indexOf(x) >= 0; }).concat([id]) : cur; nwSave(); nwRender();
+  }
+  function nwLoad() { return fetch(TT + '?api=pulse').then(function (r) { return r.json(); }).then(function (j) { if (j.ok) { NW.data = j.data; nwRender(); } }).catch(function () {}); }
+  function nwRender() {
+    var tot = 0, rows = [];
+    NSEC.forEach(function (sc) {
+      var N = nwNew(sc[0]); tot += N.length;
+      [].forEach.call(document.querySelectorAll('[data-sec="' + sc[0] + '"]'), function (a) {
+        var b = a.querySelector('.nw-dot'); if (!b) { b = document.createElement('i'); b.className = 'nw-dot'; a.appendChild(b); }
+        b.textContent = N.length > 9 ? '9+' : N.length; b.style.display = N.length ? '' : 'none';
+      });
+      N.slice(0, 4).forEach(function (x) { rows.push({ k: sc[0], lab: sc[1], href: sc[2], x: x }); });
+    });
+    var el = document.getElementById('nwBar');
+    if (el) {
+      el.innerHTML = tot ? '<div class="nw-wrap"><div class="nw-head"><b>🔔 มีอะไรใหม่ <span class="nw-n">' + tot + '</span></b><a href="#" data-nw="all">✓ อ่านแล้วทั้งหมด</a></div>' +
+        rows.slice(0, 8).map(function (r) { return '<a class="nw-row" ' + (r.k === 'asg' ? 'href="#" data-asg="open"' : r.href.charAt(0) === '#' ? 'href="' + r.href + '"' : 'href="' + r.href + '" target="_top"') + ' data-nwk="' + r.k + '" data-nwid="' + esc(r.x.id) + '"><span class="nw-lab">' + r.lab + '</span>' + (r.x.u ? '🚨 ' : '') + esc(r.x.t) + '</a>'; }).join('') +
+        (tot > 8 ? '<div class="asg-s">และอีก ' + (tot - 8) + ' รายการ — ดูตัวเลขแดงที่เมนู</div>' : '') + '</div>' : '';
+    }
+    var base = document.title.replace(/^\(\d+\+?\)\s*/, ''); document.title = (tot ? '(' + tot + ') ' : '') + base;
+    try { if (navigator.setAppBadge) { if (tot) navigator.setAppBadge(tot); else navigator.clearAppBadge(); } } catch (e) {}
+  }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('[data-nw="all"]'); if (a) { ev.preventDefault(); NSEC.forEach(function (sc) { nwMark(sc[0]); }); return; }
+    var r = ev.target.closest('[data-nwk]'); if (r) { nwMark(r.getAttribute('data-nwk'), r.getAttribute('data-nwid')); return; }
+    var m = ev.target.closest('[data-sec]'); if (m) nwMark(m.getAttribute('data-sec'));
+    var n = ev.target.closest('[data-annid]'); if (n) nwMark('news', n.getAttribute('data-annid'));
+  }, true);
+  // ⚙️ รายการงานที่ติดตาม (ตั้งเองได้ แยกตามภาคเรียน) — ต้องแก้ index.html: "const K=" เป็น "let K=" 1 ครั้ง
+  var TKS = { list: null, term: '', edit: null, warn: '' };
+  function tkTerm() { return trTerm() || ''; }
+  function tkLoad() {
+    var t = tkTerm(); if (!t) return Promise.resolve();
+    return post({ a: 'tasks', t: t }).then(function (j) {
+      TKS.list = j.list || []; TKS.term = t; TKS.warn = '';
+      try { if (typeof K !== 'undefined' && j.K && j.K.length) { K = j.K; var ft = document.getElementById('ft'); if (ft) { var v = ft.value; ft.innerHTML = '<option value="">ทุกรายการงาน</option>' + j.K.map(function (k, i) { return '<option value="' + i + '">' + esc(k) + '</option>'; }).join(''); ft.value = v; } } }
+      catch (e) { TKS.warn = 'ยังเปลี่ยนหัวข้อในตารางเดิมไม่ได้ — ต้องแก้ index.html จาก const K= เป็น let K= ก่อน'; }
+      try { if (typeof ADM !== 'undefined' && ADM && typeof window.all === 'function') window.all(); } catch (e) {}
+      tkRender();
+    }).catch(function () {});
+  }
+  function tkRender() {
+    var ad = document.getElementById('admin'); if (!ad) return;
+    var box = document.getElementById('tkBox'); if (!box) { box = document.createElement('details'); box.id = 'tkBox'; box.className = 'box'; var t0 = ad.querySelector('.tools'); if (t0 && t0.nextSibling) ad.insertBefore(box, t0.nextSibling.nextSibling || null); else ad.appendChild(box); }
+    var open = box.open, L = TKS.edit || (TKS.list || []).map(function (x) { return { n: x.n, col: x.col, auto: x.auto }; });
+    var h = '<summary><b>⚙️ รายการงานที่ติดตาม · ภาคเรียน ' + esc(TKS.term) + '</b> <span style="color:var(--mu);font-size:13px">(' + L.length + ' หัวข้อ · กดเพื่อเพิ่ม/แก้/เรียง)</span></summary>';
+    if (TKS.warn) h += '<p style="color:var(--no)">⚠️ ' + esc(TKS.warn) + '</p>';
+    h += '<p style="color:var(--mu);font-size:13px;margin:6px 0">แก้ชื่อ · เรียงลำดับ ↑↓ · ✕ เอาออก (ข้อมูลเดิมยังเก็บไว้ เพิ่มกลับได้) · หัวข้อใหม่เริ่มเป็น "ยังไม่ส่ง" ทุกคน · แต่ละภาคเรียนตั้งแยกกัน</p>' +
+      L.map(function (x, i) {
+        return '<div class="tk-row"><span class="tk-no">' + (i + 1) + '</span><input class="tk-n" data-i="' + i + '" value="' + esc(x.n) + '" maxlength="60">' +
+          '<select class="tk-a" data-i="' + i + '"><option value="">ติ๊กเอง</option><option value="โครงการ"' + (x.auto === 'โครงการ' ? ' selected' : '') + '>อัตโนมัติจากรายงานโครงการ</option><option value="อบรม"' + (x.auto === 'อบรม' ? ' selected' : '') + '>อัตโนมัติจากรายงานการอบรม</option></select>' +
+          '<button class="o" data-tk="up:' + i + '" title="เลื่อนขึ้น">↑</button><button class="o" data-tk="dn:' + i + '" title="เลื่อนลง">↓</button><button class="o" data-tk="del:' + i + '" title="เอาออก" style="color:var(--no)">✕</button></div>';
+      }).join('') +
+      '<div class="tools" style="margin-top:8px"><button class="o" data-tk="add">＋ เพิ่มหัวข้อ</button><button data-tk="save">💾 บันทึกรายการงาน</button>' + (TKS.edit ? '<button class="o" data-tk="reset">ยกเลิกการแก้</button>' : '') + '</div>';
+    box.innerHTML = h; box.open = open || !!TKS.edit;
+  }
+  function tkSync() { [].forEach.call(document.querySelectorAll('.tk-n'), function (el) { TKS.edit[+el.getAttribute('data-i')].n = el.value; }); [].forEach.call(document.querySelectorAll('.tk-a'), function (el) { TKS.edit[+el.getAttribute('data-i')].auto = el.value; }); }
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-tk]'); if (!el) return; ev.preventDefault();
+    if (!TKS.edit) TKS.edit = (TKS.list || []).map(function (x) { return { n: x.n, col: x.col, auto: x.auto }; });
+    tkSync(); var p = el.getAttribute('data-tk').split(':'), a = p[0], i = +p[1], E = TKS.edit;
+    if (a === 'up' && i > 0) { var t = E[i]; E[i] = E[i - 1]; E[i - 1] = t; }
+    if (a === 'dn' && i < E.length - 1) { var u = E[i]; E[i] = E[i + 1]; E[i + 1] = u; }
+    if (a === 'del') { if (!window.confirm('เอา "' + E[i].n + '" ออกจากรายการ? (ข้อมูลเดิมยังเก็บไว้)')) return; E.splice(i, 1); }
+    if (a === 'add') { E.push({ n: '', col: 0, auto: '' }); tkRender(); var ins = document.querySelectorAll('.tk-n'); if (ins.length) ins[ins.length - 1].focus(); return; }
+    if (a === 'reset') { TKS.edit = null; return tkRender(); }
+    if (a === 'save') {
+      var L = E.filter(function (x) { return String(x.n).trim(); });
+      if (!L.length) return toast('ต้องมีอย่างน้อย 1 หัวข้อ');
+      if (!S.pw) return toast('กรุณาเข้าสู่ระบบ Admin ระบบติดตามอีกครั้ง');
+      el.disabled = true;
+      return post({ a: 'tasksave', pw: S.pw, t: TKS.term, list: L }).then(function () { TKS.edit = null; toast('บันทึกรายการงานแล้ว — กำลังโหลดตารางใหม่'); MW.sum = null; MW.mine = null; return tkLoad(); })
+        .then(function () { var rb = document.getElementById('rfb'); if (rb) rb.click(); }).catch(function (e) { el.disabled = false; toast(e.message); });
+    }
+    tkRender();
+  });
   // จัดเมนูหน้าแรกใหม่เป็นหมวด + ปุ่มใหญ่ งานของฉัน / ภาพรวม
   function mwMenu(links) {
     if (!links || document.getElementById('mwMenu')) return;
     var A = function (href, ic, tx, extra) { return '<a href="' + href + '"' + (extra || ' target="_top"') + '><span>' + ic + '</span>' + tx + '</a>'; };
-    var html = '<div id="mwMenu"><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
+    var html = '<div id="mwMenu"><div id="nwBar"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
       '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a></div>' +
-      '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้') + '</div>' +
-      '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร') +
-      A('#', '📋', 'ติดตามการส่งงานครู', ' data-mw="track" id="mwTrack"') + A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
-      '<div class="h">🏫 ข้อมูลโรงเรียน</div><div class="g">' + A(TT + '?page=acts', '📅', 'ปฏิทินงานโรงเรียน') + A(TT + '?page=groups', '👥', 'กลุ่มกิจกรรม/ผู้รับเช็ค') + A(TT + '?page=prduty', '📣', 'เวรสื่อประชาสัมพันธ์') +
-      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร') + '<a href="#" data-asg="admin"><span>⚙️</span>Admin</a></div>' +
+      '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้', ' target="_top" data-sec="subs"') + '</div>' +
+      '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร', ' target="_top" data-sec="awards"') +
+      A('#', '📋', 'ติดตามการส่งงานครู', ' data-mw="track" id="mwTrack"') + A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open" data-sec="asg"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
+      '<div class="h">🏫 ข้อมูลโรงเรียน</div><div class="g">' + A(TT + '?page=news', '📢', 'ประกาศข่าวสาร', ' target="_top" data-sec="news"') + A(TT + '?page=acts', '📅', 'ปฏิทินงานโรงเรียน', ' target="_top" data-sec="acts"') + A(TT + '?page=groups', '👥', 'กลุ่มกิจกรรม/ผู้รับเช็ค') + A(TT + '?page=prduty', '📣', 'เวรสื่อประชาสัมพันธ์') +
+      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร', ' target="_top" data-sec="docs"') + '<a href="#" data-asg="admin"><span>⚙️</span>Admin</a></div>' +
       '<div id="mwLinks"></div></div>';
     var old = links.querySelector('.g'), hh = links.querySelector('.h');
     if (old) old.style.display = 'none'; if (hh) hh.style.display = 'none';
@@ -558,9 +650,12 @@
     fetch(TT + '?api=links').then(function (r) { return r.json(); }).then(function (j) {
       var L = j.ok ? j.data.items : [], el = document.getElementById('mwLinks'); if (!el) return;
       el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a href="' + TT + '?page=admin&to=links" target="_top" style="font-size:12.5px;font-weight:400;margin-left:6px">จัดการลิงก์ (Admin)</a></div><div class="g">' +
-        (L.length ? L.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์ — Admin เพิ่มได้ที่ "จัดการลิงก์"</span>') + '</div>';
+        (L.length ? L.map(function (x) { return '<a data-nwk="links" data-nwid="' + esc(x.link_id || '') + '" href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์ — Admin เพิ่มได้ที่ "จัดการลิงก์"</span>') + '</div>';
     }).catch(function () {});
-    loadUp(); document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
+    loadUp(); nwLoad(); setTimeout(tkLoad, 300);
+    document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
+    setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setInterval(nwLoad, 5 * 60 * 1000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { nwLoad(); load().catch(function () {}); } });
+    document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
   }
   // Admin เข้าครั้งเดียว: เข้า Admin ระบบติดตามแล้ว ใช้กับมอบหมายงานได้เลย
@@ -599,6 +694,12 @@
       '#asgNb{font-style:normal;background:#DC2626;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:0 7px;margin-left:6px}' +
       '#tosch,#adsch,#tnm,#tba{display:none!important}' +
       '#mwMenu .h{font-weight:700;color:#0a7f45;margin:12px 0 6px;font-size:15px}#mwMenu .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}' +
+      '.tk-row{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}.tk-no{width:22px;text-align:right;color:var(--mu,#6B7280)}.tk-n{flex:1 1 220px;min-width:160px}.tk-a{flex:0 1 230px}.tk-row button{padding:5px 10px}' +
+      '.nw-wrap{background:#FFFBEB;border:2px solid #F59E0B;border-radius:14px;padding:8px 12px;margin-bottom:10px;color:#111}.nw-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}.nw-head b{font-size:17px;color:#92400E}.nw-head a{font-size:13px;color:#92400E!important;border:0!important;padding:0!important;background:none!important}' +
+      '.nw-n{display:inline-block;background:#DC2626;color:#fff;border-radius:99px;padding:0 8px;font-size:13px;margin-left:4px;animation:upPulse 2s infinite}' +
+      '.nw-row{display:flex!important;gap:8px;align-items:center;padding:5px 2px!important;border:0!important;border-top:1px solid #FDE68A!important;border-radius:0!important;background:none!important;color:#111!important;text-decoration:none!important;font-weight:400!important;font-size:14.5px}.nw-row:hover{background:#FEF3C7!important}' +
+      '.nw-lab{flex:none;font-size:12px;background:#fff;border:1px solid #FCD34D;border-radius:99px;padding:0 8px;color:#92400E}' +
+      '.nw-dot{font-style:normal;background:#DC2626;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:0 7px;margin-left:auto;box-shadow:0 0 0 2px #fff}' +
       '.nb-wrap{background:#fff;border-radius:16px;padding:10px 14px;margin-bottom:12px;border:3px solid #2563EB;box-shadow:0 4px 14px rgba(37,99,235,.2);color:#111}.nb-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px}.nb-head b{font-size:20px;color:#1D4ED8}.nb-head a{font-size:13px;color:#1D4ED8}' +
       '.nb-it{border-top:1px solid #e5e7eb;padding:7px 2px}.nb-it summary{cursor:pointer;font-size:16px;list-style:none;display:flex;gap:8px;align-items:center}.nb-it summary::-webkit-details-marker{display:none}' +
       '.nb-new{background:#2563EB;color:#fff;border-radius:99px;padding:0 9px;font-size:12px;flex:none}.nb-tag{background:#DC2626;color:#fff;border-radius:99px;padding:0 9px;font-size:12px;flex:none;animation:upPulse 1.6s infinite}.nb-u{background:#FEF2F2;border-radius:10px;padding:8px}.nb-u summary b{color:#B91C1C}' +
