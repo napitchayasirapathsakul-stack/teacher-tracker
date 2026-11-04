@@ -126,10 +126,12 @@
     if (S.tab === 'me') h += viewMe(); else if (S.tab === 'all') h += viewAll(false); else if (S.tab === 'ppl') h += viewPpl(); else h += viewAdm();
     box.innerHTML = h;
   }
+  // ลิงก์ในรายละเอียดงานกดได้ (ข้อความผ่าน esc แล้ว)
+  function lnk(t) { return t.replace(/https?:\/\/[^\s<]+/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">🔗 เปิดลิงก์</a>'; }); }
   function card(x, inner) { var st = x._st || 'open'; return '<div class="asg-card" style="border-left-color:' + COL[st] + '">' + inner + '</div>'; }
   function head(x, st, label) {
     return '<span class="asg-b" style="background:' + BG[st] + ';color:' + COL[st] + '">' + esc(label) + '</span><div class="asg-t">' + esc(x.n) + '</div>' +
-      '<div class="asg-s">มอบหมาย ' + th(x.d) + ' · กำหนดส่ง <b>' + th(x.u) + '</b></div>' + (x.m ? '<div class="asg-m">' + esc(x.m) + '</div>' : '');
+      '<div class="asg-s">มอบหมาย ' + th(x.d) + ' · กำหนดส่ง <b>' + th(x.u) + '</b></div>' + (x.m ? '<div class="asg-m">' + lnk(esc(x.m)) + '</div>' : '');
   }
   function viewMe() {
     var h = '<label class="asg-f">ชื่อของฉัน<select id="asgMe"><option value="">— เลือกชื่อของคุณ —</option>' + pnames().map(function (t) { return '<option' + (t === S.me ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></label>';
