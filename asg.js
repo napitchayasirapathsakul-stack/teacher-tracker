@@ -15,8 +15,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function th(iso) { var p = String(iso || '').split('-').map(Number); return p[0] ? p[2] + ' ' + MS[p[1] - 1] + ' ' + String(p[0] + 543).slice(2) : ''; }
   function today() { return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10); }
-  function nd(x) { return !x.u || String(x.u) >= '9999'; } // ไม่มีกำหนดส่ง = รับทราบอย่างเดียว
-  function days(u) { if (!u || String(u) >= '9999') return 99999; return Math.round((new Date(u + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 864e5); }
+  function days(u) { return Math.round((new Date(u + 'T00:00:00Z') - new Date(today() + 'T00:00:00Z')) / 864e5); }
   function short(n) { return String(n).replace(/^(นางสาว|นาง|นาย)\s*/, '').split(' ')[0]; }
   // ---------- กิจกรรมออนไลน์ (จากระบบตารางสอน · ดูได้ทุกคน) ----------
   function first(n) { return String(n || '').replace(/^(นางสาว|นาง|นาย|ว่าที่\s*ร\.?ต\.?\s*(หญิง)?)\s*/, '').split(' ')[0]; }
@@ -68,7 +67,7 @@
     if (g.d) return 'done';
     var d = days(x.u); return d < 0 ? 'late' : d <= 2 ? 'soon' : 'open';
   }
-  function dueText(x) { if (nd(x)) return 'รับทราบอย่างเดียว'; var d = days(x.u); return d < 0 ? 'เลยกำหนด ' + (-d) + ' วัน' : d === 0 ? 'ครบกำหนดวันนี้' : d === 1 ? 'ครบกำหนดพรุ่งนี้' : 'อีก ' + d + ' วัน'; }
+  function dueText(x) { var d = days(x.u); return d < 0 ? 'เลยกำหนด ' + (-d) + ' วัน' : d === 0 ? 'ครบกำหนดวันนี้' : d === 1 ? 'ครบกำหนดพรุ่งนี้' : 'อีก ' + d + ' วัน'; }
   var COL = { late: '#B91C1C', soon: '#D97706', open: '#2563EB', done: '#047857' };
   var BG = { late: '#FEE2E2', soon: '#FEF3C7', open: '#DBEAFE', done: '#D1FAE5' };
 
@@ -127,12 +126,10 @@
     if (S.tab === 'me') h += viewMe(); else if (S.tab === 'all') h += viewAll(false); else if (S.tab === 'ppl') h += viewPpl(); else h += viewAdm();
     box.innerHTML = h;
   }
-  // ลิงก์ในรายละเอียดงานกดได้ (ข้อความผ่าน esc แล้ว)
-  function lnk(t) { return t.replace(/https?:\/\/[^\s<]+/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">🔗 เปิดลิงก์</a>'; }); }
   function card(x, inner) { var st = x._st || 'open'; return '<div class="asg-card" style="border-left-color:' + COL[st] + '">' + inner + '</div>'; }
   function head(x, st, label) {
     return '<span class="asg-b" style="background:' + BG[st] + ';color:' + COL[st] + '">' + esc(label) + '</span><div class="asg-t">' + esc(x.n) + '</div>' +
-      '<div class="asg-s">มอบหมาย ' + th(x.d) + (nd(x) ? ' · <b>ไม่มีกำหนดส่ง (รับทราบอย่างเดียว)</b>' : ' · กำหนดส่ง <b>' + th(x.u) + '</b>') + '</div>' + (x.m ? '<div class="asg-m">' + lnk(esc(x.m)) + '</div>' : '');
+      '<div class="asg-s">มอบหมาย ' + th(x.d) + ' · กำหนดส่ง <b>' + th(x.u) + '</b></div>' + (x.m ? '<div class="asg-m">' + esc(x.m) + '</div>' : '');
   }
   function viewMe() {
     var h = '<label class="asg-f">ชื่อของฉัน<select id="asgMe"><option value="">— เลือกชื่อของคุณ —</option>' + pnames().map(function (t) { return '<option' + (t === S.me ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></label>';
@@ -190,7 +187,7 @@
   function viewAll(admin) {
     var list = S.G.slice().map(function (x) {
       var done = x.a.filter(function (z) { return (x.st[z] || {}).d; }).length, ack = x.a.filter(function (z) { return (x.st[z] || {}).k; }).length;
-      x._done = done; x._ack = ack; var d = days(x.u); x._st = done === x.a.length || (nd(x) && ack === x.a.length) ? 'done' : d < 0 ? 'late' : d <= 2 ? 'soon' : 'open'; return x;
+      x._done = done; x._ack = ack; var d = days(x.u); x._st = done === x.a.length ? 'done' : d < 0 ? 'late' : d <= 2 ? 'soon' : 'open'; return x;
     });
     var order = { late: 0, soon: 1, open: 2, done: 3 };
     list.sort(function (a, b) { return order[a._st] - order[b._st] || (a.u < b.u ? -1 : 1); });
@@ -212,7 +209,7 @@
     var f = S.form, h = '<div class="asg-tools"><button class="asg-btn gh" data-asg="logout">ออกจากระบบผู้บริหาร</button>' + (f ? '' : '<button class="asg-btn ok" data-asg="new">＋ มอบหมายงาน</button><button class="asg-btn gh" data-asg="owner">👤 เปลี่ยนผู้รับผิดชอบโครงการ</button><button class="asg-btn gh" data-asg="migrate" title="คัดลอกงานจาก ตารางงาน/ปฏิทินเดิม มาไว้ที่บันทึกมอบหมายงาน">📥 ย้ายงานจากปฏิทินเดิม</button>') + '</div>';
     if (f) {
       h += '<div class="asg-card asg-form"><b>' + (f.id ? '✏️ แก้ไขงาน' : '＋ มอบหมายงาน') + '</b>' +
-        '<div class="asg-row"><label class="asg-f">วันที่มอบหมาย<input type="date" id="asgD" value="' + esc(f.d) + '"></label><label class="asg-f">กำหนดส่ง <small style="color:#6B7280">(เว้นว่าง = รับทราบอย่างเดียว)</small><input type="date" id="asgU" value="' + esc(f.u) + '"></label></div>' +
+        '<div class="asg-row"><label class="asg-f">วันที่มอบหมาย<input type="date" id="asgD" value="' + esc(f.d) + '"></label><label class="asg-f">กำหนดส่ง *<input type="date" id="asgU" value="' + esc(f.u) + '"></label></div>' +
         '<label class="asg-f">เรื่อง *<input id="asgN" maxlength="200" value="' + esc(f.n) + '"></label>' +
         '<label class="asg-f">รายละเอียด<textarea id="asgM" rows="3" maxlength="2000">' + esc(f.m) + '</textarea></label>' +
         '<div class="asg-s" style="margin-top:6px">ผู้ได้รับมอบหมาย * (เลือกได้หลายคน) · <a href="#" data-asg="pick:t">เลือกครูทั้งหมด</a> · <a href="#" data-asg="pick:1">เลือกทุกคน</a> · <a href="#" data-asg="pick:0">ล้าง</a></div><div class="asg-chk">' +
@@ -275,9 +272,8 @@
     if (a === 'save') {
       var e = { d: document.getElementById('asgD').value, u: document.getElementById('asgU').value, n: document.getElementById('asgN').value, m: document.getElementById('asgM').value,
         a: [].map.call(document.querySelectorAll('[name=asgA]:checked'), function (c) { return c.value; }) };
-      if (!e.n.trim()) return toast('กรุณาใส่เรื่อง'); if (e.u && e.u < e.d) return toast('กำหนดส่งต้องไม่ก่อนวันที่มอบหมาย'); if (!e.a.length) return toast('กรุณาเลือกครูอย่างน้อย 1 คน');
-      var sv = function (u) { e.u = u; return post({ a: 'asgsave', pw: S.pw, id: S.form.id || undefined, e: e }); };
-      job = (e.u ? sv(e.u) : sv('').catch(function () { return sv('9999-12-31'); })).then(function () { S.form = null; toast('บันทึกการมอบหมายงานแล้ว'); });
+      if (!e.n.trim()) return toast('กรุณาใส่เรื่อง'); if (!e.u) return toast('กรุณาใส่กำหนดส่ง'); if (e.u < e.d) return toast('กำหนดส่งต้องไม่ก่อนวันที่มอบหมาย'); if (!e.a.length) return toast('กรุณาเลือกครูอย่างน้อย 1 คน');
+      job = post({ a: 'asgsave', pw: S.pw, id: S.form.id || undefined, e: e }).then(function () { S.form = null; toast('บันทึกการมอบหมายงานแล้ว'); });
     }
     if (a === 'done') job = post({ a: 'asgdone', pw: S.pw, id: p[1], v: Number(p[2]), name: decodeURIComponent(p.slice(3).join(':')) });
     if (a === 'del') { if (!window.confirm('ลบงานนี้?')) return; job = post({ a: 'asgdel', pw: S.pw, id: p[1] }).then(function () { toast('ลบแล้ว'); }); }
@@ -311,7 +307,7 @@
     else h += open.map(function (x) {
       var g = x.st[nm] || {};
       return '<div class="row" style="align-items:flex-start"><span><span class="asg-b" style="background:' + BG[x._st] + ';color:' + COL[x._st] + '">' + esc(dueText(x)) + '</span><br><b>' + esc(x.n) + '</b>' +
-        '<br><small>มอบหมาย ' + th(x.d) + (nd(x) ? ' · รับทราบอย่างเดียว' : ' · กำหนดส่ง ' + th(x.u)) + '</small>' + (x.m ? '<br><small style="white-space:pre-line">' + esc(x.m) + '</small>' : '') + '</span>' +
+        '<br><small>มอบหมาย ' + th(x.d) + ' · กำหนดส่ง ' + th(x.u) + '</small>' + (x.m ? '<br><small style="white-space:pre-line">' + esc(x.m) + '</small>' : '') + '</span>' +
         (g.k ? '<span class="asg-ok">👍 รับทราบแล้ว</span>' : '<button class="asg-btn ok" style="margin:0" data-asg="ackf:' + x.id + ':' + encodeURIComponent(nm) + '">👍 รับทราบ</button>') + '</div>';
     }).join('');
     h += '<div class="bt"><button class="o" data-asg="who:' + encodeURIComponent(nm) + '" onclick="window.scrollTo(0,0)">📌 ดูงานทั้งหมดในบันทึกมอบหมายงาน</button></div></div>';
@@ -397,7 +393,7 @@
     var asg = '<div class="mw-sec" style="border-left-color:#7C3AED"><h4>📌 งานที่ได้รับมอบหมาย</h4>' + (A.length ? A.slice(0, 6).map(function (x) {
       var g = x.st[nm] || {};
       if (x._st === 'done') cnt.ok++; else if (x._st === 'late') cnt.no++; else if (x._st === 'soon') cnt.soon++; else cnt.no++;
-      return row(esc(x.n) + '<br><small>' + (nd(x) ? 'รับทราบอย่างเดียว' : 'กำหนดส่ง ' + th(x.u)) + '</small>', x._st === 'done' ? okc('เสร็จแล้ว') : '<span style="color:' + COL[x._st] + ';font-weight:700">' + (x._st === 'late' ? '⚠️ ' : '⏳ ') + esc(dueText(x)) + '</span>' +
+      return row(esc(x.n) + '<br><small>กำหนดส่ง ' + th(x.u) + '</small>', x._st === 'done' ? okc('เสร็จแล้ว') : '<span style="color:' + COL[x._st] + ';font-weight:700">' + (x._st === 'late' ? '⚠️ ' : '⏳ ') + esc(dueText(x)) + '</span>' +
         (g.k ? '' : ' <button class="asg-btn ok" style="margin:0" data-asg="ackf:' + x.id + ':' + encodeURIComponent(nm) + '">👍 รับทราบ</button>'), true);
     }).join('') + (A.length > 6 ? '<div class="asg-s">และอีก ' + (A.length - 6) + ' งาน · <a href="#" data-asg="who:' + encodeURIComponent(nm) + '">ดูทั้งหมด</a></div>' : '') : '<div class="asg-s">ยังไม่มีงานที่ได้รับมอบหมาย</div>') + '</div>';
     // ติดตามการส่งงาน (ระบบติดตาม)
@@ -513,7 +509,7 @@
       N.map(function (x, i) {
         var p = x.date.split('-').map(Number);
         return '<details class="nb-it' + (x.level === 'ด่วน' ? ' nb-u' : '') + '"' + (i === 0 ? ' open' : '') + '><summary data-annid="' + esc(x.ann_id) + '">' + (x.level === 'ด่วน' ? '<span class="nb-tag">🚨 ด่วน</span>' : '<span class="nb-new">' + (days(x.date) >= -1 ? 'ใหม่' : p[2] + ' ' + MS[p[1] - 1]) + '</span>') + '<b>' + esc(x.title) + '</b></summary>' +
-          (x.body ? '<div class="nb-b">' + lnk(esc(x.body)) + '</div>' : '') + (x.link ? '<a class="nb-l" href="' + esc(x.link) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์/เอกสาร</a>' : '') +
+          (x.body ? '<div class="nb-b">' + esc(x.body) + '</div>' : '') + (x.link ? '<a class="nb-l" href="' + esc(x.link) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์/เอกสาร</a>' : '') +
           '<div class="nb-m">ประกาศ ' + th(x.date) + (x.by ? ' · ' + esc(String(x.by).replace(/\s*\(.*\)$/, '')) : '') + '</div></details>';
       }).join('') + '</div>';
   }
@@ -522,7 +518,7 @@
     var el = document.getElementById('upBan'); if (!el || UP.items === null) return;
     var td = today(), L = UP.items.slice();
     S.G.forEach(function (x) {
-      var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }); if (!open.length || nd(x) || x.u < td) return;
+      var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }); if (!open.length || x.u < td) return;
       L.push({ src: 'asg', date: x.u, time: '', title: x.n, who: open.length === x.a.length ? x.a.length + ' คน' : 'ค้าง ' + open.length + '/' + x.a.length + ' คน', place: '', id: x.id });
     });
     L = L.filter(function (x) { return x.date >= td || (x.end && x.end >= td); }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
