@@ -363,7 +363,7 @@
     var box = document.getElementById('mwBox'); if (!box) return;
     if (!MW.open) { box.style.display = 'none'; return; }
     box.style.display = '';
-    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + '<button class="asg-btn gh" data-mw="print" style="margin:0 4px 0 0">🖨️ พิมพ์</button>' + (MW.view !== 'me' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
+    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + '<button class="mw-pbtn" data-mw="print">🖨️ พิมพ์</button>' + (MW.view !== 'me' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
     if (MW.view === 'dash' && !S.pw) MW.view = 'all';
     h += '<div class="asg-tabs"><button data-mw="view:me" class="' + (MW.view === 'me' ? 'on' : '') + '">👤 ของฉัน (รายบุคคล)</button><button data-mw="view:all" class="' + (MW.view === 'all' ? 'on' : '') + '">📊 ภาพรวมทุกคน</button>' + (S.pw ? '<button data-mw="view:dash" class="' + (MW.view === 'dash' ? 'on' : '') + '">📈 แดชบอร์ด</button>' : '') + '</div>';
     if (!MW.W) { box.innerHTML = h + (MW.err ? '<div class="asg-empty">โหลดข้อมูลไม่ได้: ' + esc(MW.err) + '<br><small>ระบบตารางสอนต้องอัปเดตเป็นฉบับล่าสุด</small></div>' : '<div class="asg-empty">กำลังโหลดข้อมูล…</div>'); return; }
@@ -445,8 +445,7 @@
     }).catch(function () { MW.mine = { name: nm, err: 'โหลดสถานะการส่งงานไม่ได้' }; }).then(function () { MW.loadingMine = ''; mwRender(); });
   }
   function mwAll() {
-    var h = '<div class="mw-top"><label class="asg-f" style="flex:0 1 220px">แผนหน้าเดียวของเดือน' + monthSel('mwMonth2') + '</label><label class="asg-f" style="flex:0 1 220px">แสดง<select id="mwFil"><option value="">ครูทุกคน</option><option value="pend"' + (MW.filter === 'pend' ? ' selected' : '') + '>เฉพาะคนที่ยังค้าง</option></select></label>' +
-      '<button class="asg-btn gh" data-mw="print" style="align-self:flex-end">🖨️ พิมพ์สรุป</button></div>';
+    var h = '<div class="mw-top"><label class="asg-f" style="flex:0 1 220px">แผนหน้าเดียวของเดือน' + monthSel('mwMonth2') + '</label><label class="asg-f" style="flex:0 1 220px">แสดง<select id="mwFil"><option value="">ครูทุกคน</option><option value="pend"' + (MW.filter === 'pend' ? ' selected' : '') + '>เฉพาะคนที่ยังค้าง</option></select></label></div>';
     if (!MW.sum) { mwSum(); return h + '<div class="asg-empty">กำลังโหลดภาพรวม…</div>'; }
     if (MW.sum.err) h += '<div class="asg-s" style="color:#B91C1C">' + esc(MW.sum.err) + '</div>';
     var M = MW.month, rows = mwRows(M);
@@ -810,6 +809,7 @@
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
       '.push-ask select{display:block;width:100%;margin:8px 0 6px;padding:8px;border-radius:10px;border:0;font:inherit;font-size:15px;color:#111}.push-ask button{display:block;width:100%;padding:9px;border:0;border-radius:10px;background:#fff;color:#5B21B6;font:inherit;font-weight:700;font-size:15px;margin-bottom:4px;cursor:pointer}' +
+      '.asg-head button.mw-pbtn{width:auto;height:auto;border-radius:99px;padding:6px 14px;margin-right:6px;background:#E0E7FF;color:#3730A3;font:inherit;font-size:14px;font-weight:700;vertical-align:middle}' +
       '.db-card{background:#fff;border-radius:12px;padding:10px 12px;margin:8px 0;box-shadow:0 1px 3px rgba(0,0,0,.08)}.db-card h4{margin:0 0 8px;font-size:15px}.db-bar{display:grid;grid-template-columns:minmax(0,9.5em) 1fr 3.4em;align-items:center;gap:8px;font-size:13.5px;margin:6px 0}.db-bar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.db-bar b{text-align:right;font-size:13px}.db-tr{background:#EEF2F7;border-radius:6px;height:12px;overflow:hidden}.db-tr i{display:block;height:100%;border-radius:6px}' +
       '.db-who{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;padding:6px 0;border-bottom:1px solid #F1F5F9}.db-who a{color:#1F2937;text-decoration:none}.db-pill{border-radius:99px;padding:1px 9px;font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap}.db-stack{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:4px 0 8px;background:#E2E8F0}.db-stack i{display:block;height:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}.db-tr i{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
       '.db-lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}.db-lg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:var(--c)}.db-nt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.db-nt>div{border-radius:10px;padding:8px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.db-nt b{display:block}.db-on{background:#ECFDF5;border:1px solid #A7F3D0}.db-off{background:#FEF2F2;border:1px solid #FECACA}.db-note{font-size:12px;color:#6B7280;margin-top:6px}' +
