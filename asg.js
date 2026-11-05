@@ -618,6 +618,25 @@
     try { if (pushOk() && Notification.permission === 'granted' && get('push_tk') && Date.now() - Number(get('push_at') || 0) > 864e5) pushToken().catch(function () {}); } catch (e) {}
   }
   document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#pushBtn')) { ev.preventDefault(); pushEnable(); } });
+  // 🔄 รีเฟรชอัตโนมัติ: ทุก 5 นาที + ทุกครั้งที่กลับมาเปิดแอป · มีเวอร์ชันใหม่ → โหลดหน้าใหม่เอง (ไม่โหลดขณะกำลังพิมพ์)
+  function busyTyping() { var a = document.activeElement; return !!(a && /INPUT|TEXTAREA/.test(a.tagName) && a.value); }
+  function refreshAll() { nwLoad(); loadUp(); load().catch(function () {}); }
+  function verCheck() {
+    var cur = ((document.querySelector('script[src*="asg.js"]') || {}).src || '').match(/v=(\d+)/);
+    return fetch('index.html?vc=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); })
+      .then(function (h) { var m = h.match(/asg\.js\?v=(\d+)/); return !!(m && cur && m[1] !== cur[1]); }).catch(function () { return false; });
+  }
+  function setupAutoRefresh() {
+    var hiddenAt = 0;
+    setInterval(function () { if (document.hidden) return; verCheck().then(function (nv) { if (nv && !busyTyping()) location.reload(); else refreshAll(); }); }, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      verCheck().then(function (nv) { if ((nv || (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000)) && !busyTyping()) location.reload(); else refreshAll(); });
+    });
+    var rb = document.createElement('button'); rb.id = 'rfBtn'; rb.type = 'button'; rb.innerHTML = '🔄<small>รีเฟรช</small>'; rb.title = 'โหลดข้อมูลล่าสุด';
+    rb.addEventListener('click', function () { rb.classList.add('spin'); location.reload(); });
+    document.body.appendChild(rb);
+  }
   function nwRender() {
     var tot = 0, rows = [];
     NSEC.forEach(function (sc) {
@@ -716,7 +735,7 @@
     loadUp(); nwLoad(); setTimeout(tkLoad, 300);
     setInterval(function () { var t = tkTerm(); if (t && t !== TKS.term && !tkLoad.busy) { tkLoad.busy = 1; tkLoad().then(function () { tkLoad.busy = 0; }, function () { tkLoad.busy = 0; }); } }, 1500); // ภาคเรียนเปลี่ยน → โหลดชื่อหัวข้องานให้ตรง
     document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
-    setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setInterval(nwLoad, 5 * 60 * 1000); document.addEventListener('visibilitychange', function () { if (!document.hidden) { nwLoad(); load().catch(function () {}); } });
+    setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setupAutoRefresh();
     document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
   }
@@ -733,6 +752,7 @@
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
       '.push-btn{display:block!important;background:linear-gradient(135deg,#7C3AED,#2563EB)!important;color:#fff!important;border:0!important;border-radius:14px!important;padding:10px 14px!important;margin-bottom:10px;font-size:16px;font-weight:700;text-decoration:none!important;text-align:left}.push-btn small{display:block;font-weight:400;font-size:12.5px;opacity:.9}' +
+      '#rfBtn{position:fixed;right:12px;bottom:14px;z-index:95;width:58px;height:58px;border-radius:50%;border:0;background:#1D4ED8;color:#fff;font-size:22px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit}#rfBtn small{font-size:11px;margin-top:2px}#rfBtn.spin{opacity:.6}@media print{#rfBtn{display:none!important}}' +
       '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '@media(max-width:600px){.mw-wrap{overflow-x:visible!important}.mw-t{width:100%!important;min-width:0!important;table-layout:fixed;font-size:11.5px}.mw-t th{font-size:10px!important;line-height:1.25;padding:4px 1px!important;word-break:normal;overflow-wrap:anywhere;white-space:normal!important}.mw-t td{padding:4px 1px!important}.mw-t th:first-child,.mw-t td:first-child{width:30%;text-align:left}.mw-t td:first-child,.mw-t td:first-child *{white-space:normal!important;overflow-wrap:anywhere}.mw-t td:first-child{overflow:hidden}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
