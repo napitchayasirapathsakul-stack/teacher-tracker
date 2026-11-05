@@ -357,13 +357,13 @@
     var jobs = [ttW(), trP()];
     if (!S.loaded) jobs.push(load());
     if (!S.acts) jobs.push(loadActs());
-    return Promise.all(jobs);
+    return Promise.all(jobs).then(function (r) { MW.at = new Date(); return r; });
   }
   function mwRender() {
     var box = document.getElementById('mwBox'); if (!box) return;
     if (!MW.open) { box.style.display = 'none'; return; }
     box.style.display = '';
-    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + (MW.view === 'all' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
+    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + '<button class="asg-btn gh" data-mw="print" style="margin:0 4px 0 0">🖨️ พิมพ์</button>' + (MW.view === 'all' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
     h += '<div class="asg-tabs"><button data-mw="view:me" class="' + (MW.view === 'me' ? 'on' : '') + '">👤 ของฉัน (รายบุคคล)</button><button data-mw="view:all" class="' + (MW.view === 'all' ? 'on' : '') + '">📊 ภาพรวมทุกคน</button></div>';
     if (!MW.W) { box.innerHTML = h + (MW.err ? '<div class="asg-empty">โหลดข้อมูลไม่ได้: ' + esc(MW.err) + '<br><small>ระบบตารางสอนต้องอัปเดตเป็นฉบับล่าสุด</small></div>' : '<div class="asg-empty">กำลังโหลดข้อมูล…</div>'); return; }
     box.innerHTML = h + (MW.view === 'me' ? mwMe() : mwAll());
@@ -488,7 +488,7 @@
     if (a === 'close') { MW.open = false; return mwRender(); }
     if (a === 'view') { MW.view = p[1]; return mwRender(); }
     if (a === 'me') { S.me = decodeURIComponent(p.slice(1).join(':')); put('asg_me', S.me); badge(); MW.view = 'me'; mwRender(); document.getElementById('mwBox').scrollIntoView({ behavior: 'smooth' }); return; }
-    if (a === 'print') { document.body.classList.add('mw-printing'); window.print(); setTimeout(function () { document.body.classList.remove('mw-printing'); }, 500); return; }
+    if (a === 'print') { var bx = document.getElementById('mwBox'), ph = document.getElementById('mwPH'); if (ph) ph.remove(); if (bx) bx.insertAdjacentHTML('afterbegin', pHead(MW.view === 'me' ? 'สรุปงานรายบุคคล · ' + (S.me || '') : 'สรุปภาพรวมงานครู', MW.at)); document.body.classList.add('mw-printing'); window.print(); setTimeout(function () { document.body.classList.remove('mw-printing'); var p2 = document.getElementById('mwPH'); if (p2) p2.remove(); }, 800); return; }
     if (a === 'track') { document.body.classList.add('sks-open'); var hm = document.getElementById('home'); if (hm) hm.scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'proj') { document.body.classList.add('sks-open'); var tp = document.getElementById('topj'); if (tp) tp.click(); return; }
   }
@@ -637,6 +637,13 @@
     rb.addEventListener('click', function () { rb.classList.add('spin'); location.reload(); });
     document.body.appendChild(rb);
   }
+  // 🖨️ หัวกระดาษพิมพ์: โลโก้ กทม. + โลโก้โรงเรียน · ชื่อโรงเรียน · วันที่พิมพ์ · วันที่อัปเดตข้อมูล
+  function thDT(d) { d = d || new Date(); var p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getDate() + ' ' + MS[d.getMonth()] + ' ' + (d.getFullYear() + 543) + ' เวลา ' + p(d.getHours()) + '.' + p(d.getMinutes()) + ' น.'; }
+  function pHead(title, at) {
+    var L = window.SK_LOGO || {};
+    return '<div id="mwPH" class="p-head">' + (L.bma ? '<img src="' + L.bma + '" alt="">' : '<span></span>') + '<div><b>โรงเรียนวัดแสนเกษม</b><div>สำนักงานเขตหนองจอก กรุงเทพมหานคร</div><div class="p-ti">' + esc(title) + '</div>' +
+      '<small>พิมพ์เมื่อ ' + thDT(new Date()) + ' · ข้อมูลอัปเดตเมื่อ ' + thDT(at || new Date()) + '</small></div>' + (L.sch ? '<img src="' + L.sch + '" alt="">' : '<span></span>') + '</div>';
+  }
   function nwRender() {
     var tot = 0, rows = [];
     NSEC.forEach(function (sc) {
@@ -749,10 +756,14 @@
 
   function init() {
     S.me = get('asg_me'); S.pw = sget('asg_pw');
+    (function () { var lg = document.createElement('script'); lg.src = 'logos.js?v=1'; document.head.appendChild(lg); })();
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
       '.push-btn{display:block!important;background:linear-gradient(135deg,#7C3AED,#2563EB)!important;color:#fff!important;border:0!important;border-radius:14px!important;padding:10px 14px!important;margin-bottom:10px;font-size:16px;font-weight:700;text-decoration:none!important;text-align:left}.push-btn small{display:block;font-weight:400;font-size:12.5px;opacity:.9}' +
       '#rfBtn{position:fixed;right:12px;bottom:14px;z-index:95;width:58px;height:58px;border-radius:50%;border:0;background:#1D4ED8;color:#fff;font-size:22px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit}#rfBtn small{font-size:11px;margin-top:2px}#rfBtn.spin{opacity:.6}@media print{#rfBtn{display:none!important}}' +
+      '@font-face{font-family:"SKF";src:local("TH SarabunPSK"),local("THSarabunPSK"),local("TH Sarabun New"),local("THSarabunNew");size-adjust:128%}' +
+      'body,button,input,select,textarea,#mwMenu,#mwBox,#asgBox{font-family:"SKF","Sarabun",sans-serif!important}' +
+      '.p-head{display:none}@media print{body.mw-printing #mwBox>*{display:revert!important}body.mw-printing #mwBox .asg-tabs,body.mw-printing #mwBox .asg-head,body.mw-printing #mwBox .mw-top,body.mw-printing #mwBox select,body.mw-printing #mwBox button,body.mw-printing #mwBox .asg-btn{display:none!important}body.mw-printing .mw-ph{display:none!important}body.mw-printing .p-head{display:grid!important;grid-template-columns:70px 1fr 70px;align-items:center;gap:10px;text-align:center;border-bottom:1.5pt solid #000;padding-bottom:6px;margin-bottom:10px;color:#000}.p-head img{width:68px;height:68px;object-fit:contain}.p-head b{font-size:20pt}.p-head div{font-size:15pt}.p-head .p-ti{font-size:17pt;font-weight:700;margin-top:2px}.p-head small{font-size:12pt}body.mw-printing *{font-family:"SKF","Sarabun",sans-serif!important}}' +
       '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '@media(max-width:600px){.mw-wrap{overflow-x:visible!important}.mw-t{width:100%!important;min-width:0!important;table-layout:fixed;font-size:11.5px}.mw-t th{font-size:10px!important;line-height:1.25;padding:4px 1px!important;word-break:normal;overflow-wrap:anywhere;white-space:normal!important}.mw-t td{padding:4px 1px!important}.mw-t th:first-child,.mw-t td:first-child{width:30%;text-align:left}.mw-t td:first-child,.mw-t td:first-child *{white-space:normal!important;overflow-wrap:anywhere}.mw-t td:first-child{overflow:hidden}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
@@ -809,7 +820,7 @@
       '.mw-it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:14.5px}.mw-it:last-child{border:0}.mw-it small{color:#6B7280}.mw-r{text-align:right;flex:none;max-width:60%}' +
       '.mw-ok{color:#047857;font-weight:700}.mw-no{color:#B91C1C;font-weight:700}.mw-go{display:inline-block;background:#047857;color:#fff!important;border-radius:8px;padding:3px 10px;font-size:13px;text-decoration:none;margin-left:4px}.mw-go.gh{background:#fff;color:#1D4ED8!important;border:1px solid #BFDBFE}' +
       '.mw-wrap{overflow-x:auto;background:#fff;border-radius:12px;margin:8px 0}.mw-t{border-collapse:collapse;width:100%;font-size:14px}.mw-t th{background:#0a7f45;color:#fff;padding:7px 5px;font-weight:600}.mw-t td{border-bottom:1px solid #eef2f7;padding:7px 5px;text-align:center}.mw-n{text-align:left!important;white-space:nowrap}.mw-n a{color:#1D4ED8;text-decoration:none}.mw-ph{display:none}' +
-      '@media print{body.mw-printing>*{display:none!important}body.mw-printing .sks-links{display:none!important}body.mw-printing #mwBox{display:block!important;box-shadow:none;background:#fff}body.mw-printing #mwBox>*:not(#mwPrint){display:none!important}body.mw-printing .mw-ph{display:block;font-weight:700;margin-bottom:6px}}' +
+      '@media print{body.mw-printing>*{display:none!important}body.mw-printing .sks-links{display:none!important}body.mw-printing #mwBox{display:block!important;box-shadow:none;background:#fff}body.mw-printing .mw-ph{display:block;font-weight:700;margin-bottom:6px}}' +
       '@media(max-width:700px){.mw-grid,.mw-big{grid-template-columns:1fr}}' +
       '.asg-act{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:14px}.asg-act:last-of-type{border:0}.asg-ad{flex:0 0 74px;font-weight:700;color:#0891B2;font-size:13px}.asg-act small{color:#6B7280}' +
       '.asg-tv .asg-act small{color:var(--mu,#6B7280)}.asg-tv .asg-s{color:var(--mu,#6B7280)}' +
