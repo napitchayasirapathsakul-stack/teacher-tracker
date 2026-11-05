@@ -690,6 +690,40 @@
     var s = document.createElement('script'); s.src = 'horo.js?v=3'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
   }
   document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-hr-open]'); if (el) { ev.preventDefault(); hrOpen(); } });
+  // ✨ ไอคอน 3 มิติ (Fluent Emoji · Microsoft, MIT) + ธีมสดใสหน้าแรก
+  var I3D = 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/';
+  var I3M = { '👩‍🏫': 'Woman teacher/Default/3D/woman_teacher_3d_default.png', '📊': 'Bar chart/3D/bar_chart_3d.png', '🔮': 'Crystal ball/3D/crystal_ball_3d.png', '📅': 'Calendar/3D/calendar_3d.png', '🗓': 'Spiral calendar/3D/spiral_calendar_3d.png', '📢': 'Loudspeaker/3D/loudspeaker_3d.png', '📘': 'Blue book/3D/blue_book_3d.png', '🎓': 'Graduation cap/3D/graduation_cap_3d.png', '🏆': 'Trophy/3D/trophy_3d.png', '📁': 'File folder/3D/file_folder_3d.png', '📌': 'Pushpin/3D/pushpin_3d.png', '👥': 'Busts in silhouette/3D/busts_in_silhouette_3d.png', '📣': 'Megaphone/3D/megaphone_3d.png', '🏛️': 'Classical building/3D/classical_building_3d.png', '👤': 'Bust in silhouette/3D/bust_in_silhouette_3d.png', '📂': 'Open file folder/3D/open_file_folder_3d.png', '⏰': 'Alarm clock/3D/alarm_clock_3d.png', '📤': 'Outbox tray/3D/outbox_tray_3d.png', '🏫': 'School/3D/school_3d.png', '🔗': 'Link/3D/link_3d.png' };
+  function i3d(e, cls) { var p = I3M[e]; return p ? '<img class="' + cls + '" src="' + I3D + encodeURI(p) + '" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode(\'' + e + '\'))">' : e; }
+  function fx3d() {
+    var m = document.getElementById('mwMenu'); if (!m) return;
+    m.querySelectorAll('.mw-big a>span:first-child:not(.fx), .g a>span:first-child:not(.fx)').forEach(function (sp) { var t = sp.textContent.trim(); if (I3M[t]) { sp.innerHTML = i3d(t, sp.closest('.mw-big') ? 'i3b' : 'i3s'); sp.classList.add('fx'); } });
+    m.querySelectorAll('.h:not(.fx), .up-head b:not(.fx)').forEach(function (h) { var n = h.firstChild; if (!n || n.nodeType !== 3) return; var t = n.textContent, k = Object.keys(I3M).filter(function (x) { return t.indexOf(x) === 0; })[0]; if (!k) return; n.textContent = t.slice(k.length); h.insertAdjacentHTML('afterbegin', i3d(k, h.tagName === 'B' ? 'i3u' : 'i3h')); h.classList.add('fx'); });
+    var b3 = m.querySelector('.mw-b3'); if (b3 && !b3.querySelector('.sp')) b3.insertAdjacentHTML('beforeend', '<span class="sp" style="left:46%;top:10px">✨</span><span class="sp" style="left:60%;bottom:10px;animation-delay:.4s">💫</span><span class="sp" style="left:75%;top:16px;animation-delay:.8s">⭐</span><span class="sp" style="left:88%;bottom:14px;animation-delay:1.2s">🌙</span>');
+    m.querySelectorAll('.mw-b1,.mw-b2').forEach(function (a, i) { if (!a.querySelector('.sp')) a.insertAdjacentHTML('beforeend', '<span class="sp" style="right:22px;' + (i ? 'bottom:12px;animation-delay:.6s' : 'top:12px') + '">' + (i ? '⭐' : '✨') + '</span>'); });
+  }
+  function fxInit() {
+    var st = document.createElement('style');
+    st.textContent = '#mwMenu{background:linear-gradient(180deg,#FFF1F8,#F5F3FF 45%,#EEF6FF);border-radius:22px;padding:12px;color:#1E1B4B}' +
+      '#mwMenu .h{color:#5B21B6!important;font-size:17px!important;font-weight:800!important;display:flex;align-items:center;gap:6px;margin:14px 2px 8px!important}' +
+      '.i3h{width:26px;height:26px}.i3s{width:36px;height:36px;display:block}.i3b{width:58px;height:58px;display:block;filter:drop-shadow(0 4px 6px rgba(30,27,75,.3))}.i3u{width:30px;height:30px;vertical-align:-7px;margin-right:4px;animation:fxWig 2.5s ease-in-out infinite}' +
+      '#mwMenu .mw-big a{position:relative;overflow:hidden;box-shadow:0 8px 20px rgba(99,102,241,.28)!important;text-shadow:0 2px 4px rgba(30,27,75,.45);font-weight:800!important;font-size:21px!important}' +
+      '#mwMenu .mw-big a small{opacity:1!important;font-weight:600!important;font-size:13.5px!important}' +
+      '#mwMenu .mw-big a>span:first-child{font-size:40px;animation:fxBob 2.2s ease-in-out infinite;flex:0 0 auto}' +
+      '#mwMenu .mw-big a::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);animation:fxSh 3.2s ease-in-out infinite;pointer-events:none}' +
+      '.mw-b1{background:linear-gradient(135deg,#38BDF8,#6366F1)!important}.mw-b2{background:linear-gradient(135deg,#A78BFA,#EC4899)!important}' +
+      '.mw-b3{background:linear-gradient(120deg,#F472B6,#C084FC 40%,#818CF8 70%,#FBBF24)!important;background-size:200% 200%!important;animation:fxFlow 6s ease infinite}' +
+      '#mwMenu .sp{position:absolute;font-size:17px;animation:fxTw 1.6s ease-in-out infinite;pointer-events:none;text-shadow:none}' +
+      '#mwMenu .g a{background:#fff!important;border:2px solid #EDE9FE!important;border-radius:16px!important;color:#1E1B4B!important;font-weight:700!important;box-shadow:0 3px 10px rgba(124,58,237,.10);transition:transform .15s,box-shadow .15s}' +
+      '#mwMenu .g a:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(124,58,237,.2)}#mwMenu .g a>span:first-child{display:inline-flex}' +
+      '.up-wrap{background:linear-gradient(135deg,#FB923C,#F472B6 55%,#C084FC)!important;box-shadow:0 8px 22px rgba(244,114,182,.35)!important;text-shadow:0 1px 3px rgba(80,7,36,.35)}' +
+      '.up-head b{font-size:20px}.up-next{background:rgba(255,255,255,.25)!important}.up-list{text-shadow:none}' +
+      '@keyframes fxBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}@keyframes fxTw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.2) rotate(20deg)}}' +
+      '@keyframes fxSh{0%{left:-60%}60%,100%{left:130%}}@keyframes fxFlow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}@keyframes fxWig{0%,100%{transform:rotate(0)}10%{transform:rotate(-14deg)}20%{transform:rotate(12deg)}30%{transform:rotate(-8deg)}40%{transform:rotate(0)}}' +
+      '@media (prefers-reduced-motion:reduce){#mwMenu *,#mwMenu *::after{animation:none!important}}@media print{#mwMenu .sp,#mwMenu .mw-big a::after{display:none}}';
+    document.head.appendChild(st);
+    var m = document.getElementById('mwMenu'); if (!m) return; fx3d();
+    new MutationObserver(function () { fx3d(); }).observe(m, { childList: true, subtree: true });
+  }
   // 🔄 รีเฟรชอัตโนมัติ: ทุก 5 นาที + ทุกครั้งที่กลับมาเปิดแอป · มีเวอร์ชันใหม่ → โหลดหน้าใหม่เอง (ไม่โหลดขณะกำลังพิมพ์)
   function busyTyping() { var a = document.activeElement; return !!(a && /INPUT|TEXTAREA/.test(a.tagName) && a.value); }
   function refreshAll() { nwLoad(); loadUp(); load().catch(function () {}); }
@@ -815,7 +849,7 @@
     loadUp(); nwLoad(); setTimeout(tkLoad, 300);
     setInterval(function () { var t = tkTerm(); if (t && t !== TKS.term && !tkLoad.busy) { tkLoad.busy = 1; tkLoad().then(function () { tkLoad.busy = 0; }, function () { tkLoad.busy = 0; }); } }, 1500); // ภาคเรียนเปลี่ยน → โหลดชื่อหัวข้องานให้ตรง
     document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
-    setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setupAutoRefresh();
+    setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setupAutoRefresh(); fxInit();
     document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
     var hb = document.createElement('div'); hb.id = 'hrBox'; hb.style.display = 'none'; mb.insertAdjacentElement('afterend', hb);
