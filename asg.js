@@ -357,6 +357,7 @@
     var jobs = [ttW(), trP()];
     if (!S.loaded) jobs.push(load());
     if (!S.acts) jobs.push(loadActs());
+    if (!S.night) jobs.push(nightLoad());
     return Promise.all(jobs).then(function (r) { MW.at = new Date(); return r; });
   }
   function mwRender() {
@@ -427,6 +428,7 @@
     var duty = '<div class="mw-sec" style="border-left-color:#0891B2"><h4>📅 หน้าที่ของฉันช่วงนี้</h4>' +
       (SB.length ? SB.slice(0, 5).map(function (x) { return row('🔄 สอนแทน ' + th(x.date) + ' คาบ ' + x.period + ' · ' + esc(x.cls) + ' ' + esc(x.subj), '<small>แทน' + esc(x.instead) + (x.role === 'ผู้ประกบ' ? ' (ประกบ)' : '') + '</small>'); }).join('') : row('🔄 สอนแทน', '<span class="asg-s">ไม่มี</span>')) +
       (prMine ? row('📣 เวรสื่อประชาสัมพันธ์', '<b>เดือน' + esc(MW.W.pr.label) + '</b>') : '');
+    var NG = nightMine(nm, td); if (NG.length) duty += row('🌙 ผู้ตรวจเวรกลางคืน', '<b>' + NG.map(function (x) { return x.date === td ? 'คืนนี้' : th(x.date); }).join(', ') + '</b>');
     var AC = S.acts && !S.acts.err ? S.acts.items.filter(function (x) { return x.date >= td && actMine(x, nm); }).slice(0, 4) : [];
     duty += AC.map(function (x) { return row('🗓️ ' + th(x.date) + (x.time ? ' ' + esc(x.time) : '') + ' · ' + esc(x.title), '<small>' + esc(x.place || '') + '</small>'); }).join('') + '</div>';
     var tot = cnt.ok + cnt.no + cnt.soon, pct = tot ? Math.round(cnt.ok * 100 / tot) : 100;
@@ -667,12 +669,17 @@
     if (ev.target.id === 'pushGo') { var v = (document.getElementById('pushNm') || {}).value; if (!v) return toast('กรุณาเลือกชื่อ'); S.me = v; put('asg_me', v); MW.pushAsk = false; badge(); render(); if (MW.open) mwRender();
       if (pushOk() && Notification.permission === 'granted' && get('push_tk')) { pushToken().then(function () { pushUi(); toast('✅ บันทึกชื่อแล้ว'); }).catch(function () { toast('บันทึกชื่อไม่สำเร็จ ลองใหม่อีกครั้ง'); }); } else pushEnable(); }
   });
+  // 🌙 เวรกลางคืน (จากระบบตารางสอน · เมนูกลุ่มกิจกรรม/เวร)
+  function nightLoad() { return fetch(TT + '?api=night').then(function (r) { return r.json(); }).then(function (j) { S.night = j.ok ? j.data : { days: [] }; }).catch(function () { S.night = { days: [] }; }); }
+  function nfn(s) { return String(s || '').replace(/^(นางสาว|นาง|นาย|น\.ส\.|รองฯ|รอง ผอ\.|ผอ\.|ครู|ว่าที่ร้อยตรี)\s*/, '').trim().split(/\s+/)[0]; }
+  function nightMine(nm, td) { var f = nfn(nm); return f ? ((S.night && S.night.days) || []).filter(function (x) { return x.date >= td && nfn(x.name) === f; }) : []; }
   // 🔮 ดวงของฉันวันนี้ (โหลดไฟล์ horo.js เมื่อกดเท่านั้น)
   function hrJobs(nm) {
-    return Promise.all([S.loaded ? 0 : load(), ttW().catch(function () { return null; }), S.acts ? 0 : loadActs()]).then(function () {
+    return Promise.all([S.loaded ? 0 : load(), ttW().catch(function () { return null; }), S.acts ? 0 : loadActs(), S.night ? 0 : nightLoad()]).then(function () {
       var td = today(), tm = new Date(Date.now() + 31 * 3600e3).toISOString().slice(0, 10), L = [];
       asgOf(nm).forEach(function (x) { if ((x.st[nm] || {}).d) return; var d = days(x.u); if (d < 0) L.push([0, '⚠️ เลยกำหนด ' + (-d) + ' วัน · ' + esc(x.n)]); else if (d <= 3) L.push([1, '⏳ ' + esc(dueText(x)) + ' · ' + esc(x.n)]); });
       var id = tid(nm); ((MW.W && MW.W.subs) || []).forEach(function (x) { if (id && x.t === id && (x.date === td || x.date === tm)) L.push([2, '🔄 สอนแทน' + (x.date === td ? 'วันนี้' : 'พรุ่งนี้') + ' คาบ ' + x.period + ' · ' + esc(x.cls) + ' ' + esc(x.subj)]); });
+      nightMine(nm, td).forEach(function (x) { if (x.date === td || x.date === tm) L.push([1, '🌙 ผู้ตรวจเวรกลางคืน' + (x.date === td ? 'คืนนี้' : 'คืนพรุ่งนี้')]); });
       if (S.acts && !S.acts.err) S.acts.items.forEach(function (x) { if ((x.date === td || x.date === tm) && actMine(x, nm)) L.push([3, '🗓️ ' + (x.date === td ? 'วันนี้' : 'พรุ่งนี้') + (x.time ? ' ' + esc(x.time) : '') + ' · ' + esc(x.title)]); });
       return L.sort(function (a, b) { return a[0] - b[0]; }).map(function (x) { return x[1]; });
     });
