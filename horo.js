@@ -263,7 +263,7 @@ function click(ev) {
   if (a[0] === 'pick') { var i = Number(a[1]), Q = H.q; if (!Q) return; if (Q.sel.indexOf(i) < 0) Q.sel.push(i); if (Q.sel.length === 3) { qPut(Q.who, { text: Q.text, c: Q.sel.map(function (k) { return Q.deck[k]; }) }); H.q = null; } return render(); }
 }
 function change(ev) { if (ev.target.id === 'hrMe') { H.API.setMe(ev.target.value); H.q = null; load(); } }
-var CSS = '#hrBox{background:linear-gradient(#EEF2FF,#FDF4FF);border-radius:16px;padding:12px;margin:10px 0}#hrBox .asg-f select{width:100%}' +
+var CSS = '#hrBox .asg-head b{color:#312E81!important}#hrBox{background:linear-gradient(#EEF2FF,#FDF4FF);border-radius:16px;padding:12px;margin:10px 0}#hrBox .asg-f select{width:100%}' +
   '.hr-job{background:linear-gradient(135deg,#DC2626,#F97316);color:#fff;border-radius:14px;padding:11px 12px;margin:10px 0;box-shadow:0 4px 12px rgba(220,38,38,.3)}.hr-job b{font-size:17px}.hr-job div{font-size:14px;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 9px;margin-top:6px}' +
   '.hr-who{text-align:center;color:#4C1D95;margin:6px 0;font-size:15px}.hr-who small{color:#6B21A8}' +
   '.hr-cards{display:flex;gap:8px;justify-content:center;margin:8px 0}.hr-cards>div{flex:0 1 100px;min-width:0}.hr-cards svg{width:100%;height:auto;filter:drop-shadow(0 3px 6px rgba(30,42,90,.25))}' +
