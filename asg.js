@@ -224,7 +224,7 @@
   function load() {
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
     var pp = post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; });
-    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); teacherView(true); });
+    return Promise.all([post({ a: 'teachers' }), g, pp]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); teacherView(true); pushUi(); });
   }
   function click(ev) {
     var el = ev.target.closest('[data-asg]'); if (!el) return;
@@ -363,10 +363,11 @@
     var box = document.getElementById('mwBox'); if (!box) return;
     if (!MW.open) { box.style.display = 'none'; return; }
     box.style.display = '';
-    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + '<button class="asg-btn gh" data-mw="print" style="margin:0 4px 0 0">🖨️ พิมพ์</button>' + (MW.view === 'all' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
-    h += '<div class="asg-tabs"><button data-mw="view:me" class="' + (MW.view === 'me' ? 'on' : '') + '">👤 ของฉัน (รายบุคคล)</button><button data-mw="view:all" class="' + (MW.view === 'all' ? 'on' : '') + '">📊 ภาพรวมทุกคน</button></div>';
+    var h = '<div class="asg-head"><b>' + (MW.view === 'me' ? '👩‍🏫 งานของฉัน' : '📊 ภาพรวมงานครู') + '</b><span>' + '<button class="asg-btn gh" data-mw="print" style="margin:0 4px 0 0">🖨️ พิมพ์</button>' + (MW.view !== 'me' ? '<button class="adm-edit" data-asg="admtrack" title="ติ๊กสถานะการส่งงาน">✏️ แก้ไข (Admin)</button> ' : '') + '<button data-mw="close" title="ปิด">✕</button></span></div>';
+    if (MW.view === 'dash' && !S.pw) MW.view = 'all';
+    h += '<div class="asg-tabs"><button data-mw="view:me" class="' + (MW.view === 'me' ? 'on' : '') + '">👤 ของฉัน (รายบุคคล)</button><button data-mw="view:all" class="' + (MW.view === 'all' ? 'on' : '') + '">📊 ภาพรวมทุกคน</button>' + (S.pw ? '<button data-mw="view:dash" class="' + (MW.view === 'dash' ? 'on' : '') + '">📈 แดชบอร์ด</button>' : '') + '</div>';
     if (!MW.W) { box.innerHTML = h + (MW.err ? '<div class="asg-empty">โหลดข้อมูลไม่ได้: ' + esc(MW.err) + '<br><small>ระบบตารางสอนต้องอัปเดตเป็นฉบับล่าสุด</small></div>' : '<div class="asg-empty">กำลังโหลดข้อมูล…</div>'); return; }
-    box.innerHTML = h + (MW.view === 'me' ? mwMe() : mwAll());
+    box.innerHTML = h + (MW.view === 'me' ? mwMe() : MW.view === 'dash' ? mwDash() : mwAll());
   }
   function monthSel(id) {
     var ms = {}, td = MW.W.today.slice(0, 7); ms[td] = 1; (MW.W.plans || []).forEach(function (x) { if (x.m) ms[x.m] = 1; });
@@ -448,7 +449,13 @@
       '<button class="asg-btn gh" data-mw="print" style="align-self:flex-end">🖨️ พิมพ์สรุป</button></div>';
     if (!MW.sum) { mwSum(); return h + '<div class="asg-empty">กำลังโหลดภาพรวม…</div>'; }
     if (MW.sum.err) h += '<div class="asg-s" style="color:#B91C1C">' + esc(MW.sum.err) + '</div>';
-    var M = MW.month, rows = MW.W.teachers.map(function (t) {
+    var M = MW.month, rows = mwRows(M);
+    if (MW.filter === 'pend') rows = rows.filter(function (r) { return r.pct < 100; });
+    rows.sort(function (a, b) { return a.pct - b.pct || a.t.name.localeCompare(b.t.name, 'th'); });
+    return mwAllTable(h, M, rows);
+  }
+  function mwRows(M) {
+    return MW.W.teachers.map(function (t) {
       var id = t.id, pn = planOf(id, 'normal', M).length > 0, po = planOf(id, 'onepage', M).length > 0;
       var A = asgOf(t.name), aOpen = A.filter(function (x) { return !(x.st[t.name] || {}).d; }).length, aLate = A.filter(function (x) { return state(x, t.name) === 'late'; }).length;
       var i = MW.sum.T ? MW.sum.T.indexOf(t.name) : -1, s = i >= 0 ? MW.sum.S[i] : null, td = 0, ta = 0;
@@ -457,10 +464,10 @@
       var P = ownPj(t.name), pd = P.filter(function (p) { return Number(p.s) === 0; }).length;
       var tr = (MW.W.trainings || []).filter(function (x) { return x.t === id; }).length;
       var ok = (pn ? 1 : 0) + (po ? 1 : 0) + td + pd + (A.length - aOpen), all = 2 + ta + P.length + A.length;
-      return { t: t, pn: pn, po: po, aOpen: aOpen, aLate: aLate, td: td, ta: ta, s: s, pd: pd, pt: P.length, tr: tr, pct: all ? Math.round(ok * 100 / all) : 100 };
+      return { t: t, pn: pn, po: po, aOpen: aOpen, aLate: aLate, td: td, ta: ta, s: s, pd: pd, pt: P.length, tr: tr, pct: all ? Math.round(ok * 100 / all) : 100, left: (pn ? 0 : 1) + (po ? 0 : 1) + (ta - td) + (P.length - pd) + aOpen };
     });
-    if (MW.filter === 'pend') rows = rows.filter(function (r) { return r.pct < 100; });
-    rows.sort(function (a, b) { return a.pct - b.pct || a.t.name.localeCompare(b.t.name, 'th'); });
+  }
+  function mwAllTable(h, M, rows) {
     var avg = rows.length ? Math.round(rows.reduce(function (n, r) { return n + r.pct; }, 0) / rows.length) : 0;
     h += '<div class="asg-stats"><div><b style="color:#2563EB">' + MW.W.teachers.length + '</b>ครูทั้งหมด</div><div><b style="color:#047857">' + rows.filter(function (r) { return r.pct === 100; }).length + '</b>ส่งครบ</div><div><b style="color:#B91C1C">' + rows.filter(function (r) { return r.pct < 100; }).length + '</b>ยังมีงานค้าง</div><div><b style="color:#7C3AED">' + avg + '%</b>ความครบถ้วนเฉลี่ย</div></div>';
     var c = function (b) { return b ? '<td class="mw-ok">✅</td>' : '<td class="mw-no">❌</td>'; };
@@ -471,6 +478,40 @@
           '<td' + (r.aLate ? ' class="mw-no"' : r.aOpen ? ' style="color:#D97706;font-weight:700"' : '') + '>' + r.aOpen + '</td><td>' + (r.s ? r.td + '/' + r.ta : '-') + '</td><td>' + (r.pt ? r.pd + '/' + r.pt : '-') + '</td><td>' + r.tr + '</td><td style="color:' + col + ';font-weight:700">' + r.pct + '%</td></tr>';
       }).join('') : '<tr><td colspan="8">ทุกคนส่งครบแล้ว 🎉</td></tr>') + '</table></div><div class="asg-s">กดชื่อครูเพื่อดูงานรายบุคคล · ติดตามงาน = 10 รายการของระบบติดตาม (ไม่นับที่ "ไม่เกี่ยวข้อง") · รายงานโครงการ/อบรม ติ๊กอัตโนมัติจากเมนูที่ครูส่ง</div>';
     return h;
+  }
+  // 📈 แดชบอร์ด (เฉพาะแอดมิน): % ส่งงานรายหัวข้อ · ครูที่ค้างมากสุด · สถานะงานมอบหมาย · ใครเปิดการแจ้งเตือน
+  function mwDash() {
+    if (!MW.sum) { mwSum(); return '<div class="asg-empty">กำลังโหลดภาพรวม…</div>'; }
+    if (!MW.pn) pnLoad();
+    var M = MW.month, rows = mwRows(M), sum = MW.sum, pjk = sum.auto && sum.auto.length ? sum.auto[0] : -1;
+    var avg = rows.length ? Math.round(rows.reduce(function (n, r) { return n + r.pct; }, 0) / rows.length) : 0;
+    var col = function (p) { return p >= 80 ? '#059669' : p >= 50 ? '#D97706' : '#DC2626'; };
+    var bar = function (name, d, a) { var p = a ? Math.round(d * 100 / a) : 0; return '<div class="db-bar"><span>' + esc(name) + '</span><div class="db-tr"><i style="width:' + p + '%;background:' + col(p) + '"></i></div><b>' + d + '/' + a + '</b></div>'; };
+    var B = bar('แผนการสอน (ปกติ)', rows.filter(function (r) { return r.pn; }).length, rows.length) + bar('แผนหน้าเดียว ' + mLabel(M).split(' ')[0], rows.filter(function (r) { return r.po; }).length, rows.length);
+    (sum.K || []).forEach(function (k, j) { if (j === pjk) return; var d = 0, a = 0; (sum.S || []).forEach(function (s) { if (s && s[j] !== 2) { a++; if (s[j] === 0) d++; } }); if (a) B += bar(k, d, a); });
+    var pjA = 0, pjD = 0; rows.forEach(function (r) { pjA += r.pt; pjD += r.pd; }); if (pjA) B += bar('รายงานโครงการ', pjD, pjA);
+    var top = rows.filter(function (r) { return r.left > 0; }).sort(function (a, b) { return b.left - a.left || a.t.name.localeCompare(b.t.name, 'th'); }).slice(0, 5);
+    var as = { done: 0, late: 0, soon: 0, open: 0 }, ack = 0, tot = 0;
+    S.G.forEach(function (x) { x.a.forEach(function (n) { tot++; as[state(x, n)]++; if ((x.st[n] || {}).k) ack++; }); });
+    var seg = function (n, c) { return tot && n ? '<i style="width:' + (n * 100 / tot) + '%;background:' + c + '"></i>' : ''; };
+    var PN = MW.pn, names = pnames(), on = [], off = [], nOn = 0;
+    if (PN && PN.L) { var cnt = {}; PN.L.forEach(function (x) { if (x.n) cnt[x.n] = (cnt[x.n] || 0) + 1; }); names.forEach(function (n) { if (cnt[n]) { on.push(esc(n) + (cnt[n] > 1 ? ' <small>· ' + cnt[n] + ' เครื่อง</small>' : '')); nOn++; } else off.push(esc(n)); }); }
+    var h = '<div class="asg-stats"><div><b style="color:#2563EB">' + rows.length + '</b>ครูทั้งหมด</div><div><b style="color:#047857">' + avg + '%</b>ส่งงานแล้ว (เฉลี่ย)</div><div><b style="color:#B91C1C">' + as.late + '</b>งานเลยกำหนด</div><div><b style="color:#7C3AED">' + (PN && PN.L ? nOn + '/' + names.length : '…') + '</b>เปิดแจ้งเตือน</div></div>';
+    h += '<div class="db-card"><h4>📤 การส่งงานแต่ละหัวข้อ' + (sum.term || MW.W.term.label ? ' (ภาคเรียน ' + esc(MW.W.term.label || '') + ')' : '') + '</h4>' + B + '<div class="db-note">เขียว ≥ 80% · ส้ม 50–79% · แดง &lt; 50% · ไม่นับคนที่ "ไม่เกี่ยวข้อง"</div></div>';
+    h += '<div class="db-card"><h4>⏳ ครูที่มีงานค้างมากที่สุด</h4>' + (top.length ? top.map(function (r, i) { return '<div class="db-who"><a href="#" data-mw="me:' + encodeURIComponent(r.t.name) + '">' + (i + 1) + '. ' + esc(r.t.name) + '</a><span class="db-pill" style="background:' + (r.left >= 5 ? '#DC2626' : '#D97706') + '">ค้าง ' + r.left + '</span></div>'; }).join('') : '<div class="asg-s">ทุกคนส่งครบแล้ว 🎉</div>') + '<div class="db-note">นับรวม: แผนการสอน + หัวข้อติดตามงาน + งานมอบหมาย + รายงานโครงการ · กดชื่อเพื่อดูรายละเอียด</div></div>';
+    h += '<div class="db-card"><h4>📌 สถานะงานมอบหมาย (' + tot + ' รายการ)</h4>' + (tot ? '<div class="db-stack">' + seg(as.done, '#059669') + seg(as.late, '#DC2626') + seg(as.soon, '#D97706') + seg(as.open, '#94A3B8') + '</div><div class="db-lg"><span style="--c:#059669">เสร็จ ' + as.done + '</span><span style="--c:#DC2626">เลยกำหนด ' + as.late + '</span><span style="--c:#D97706">ใกล้ครบกำหนด ' + as.soon + '</span><span style="--c:#94A3B8">กำลังทำ ' + as.open + '</span></div><div class="db-note">👍 รับทราบงานแล้ว ' + ack + '/' + tot + '</div>' : '<div class="asg-s">ยังไม่มีงานมอบหมาย</div>') + '</div>';
+    h += '<div class="db-card"><h4>🔔 การแจ้งเตือนบนมือถือ' + (PN && PN.L ? ' · ' + nOn + '/' + names.length + ' คน' : '') + '</h4>';
+    if (!PN) h += '<div class="asg-s">กำลังโหลด…</div>';
+    else if (PN.err) h += '<div class="asg-s" style="color:#B91C1C">' + esc(PN.err) + '</div>';
+    else h += '<div class="db-stack">' + (names.length ? '<i style="width:' + (nOn * 100 / names.length) + '%;background:#7C3AED"></i>' : '') + '</div><div class="db-nt"><div class="db-on"><b>🔔 เปิดแล้ว (' + nOn + ')</b>' + (on.join('<br>') || '-') + '</div><div class="db-off"><b>🔕 ยังไม่เปิด (' + off.length + ')</b>' + (off.join('<br>') || '-') + '</div></div>' +
+      (PN.anon ? '<div class="db-note">มีอีก ' + PN.anon + ' เครื่องที่เปิดไว้ก่อนมีระบบชื่อ → ครั้งหน้าที่เครื่องนั้นเปิดแอป ระบบจะถามชื่อ 1 ครั้ง</div>' : '');
+    return h + '</div>';
+  }
+  function pnLoad() {
+    if (MW.pnBusy) return; MW.pnBusy = true;
+    fetch(PUSH.url, { method: 'POST', body: JSON.stringify({ a: 'who', pw: S.pw }) }).then(function (r) { return r.json(); })
+      .then(function (j) { MW.pn = j.ok ? j : { err: j.err === 'auth' ? 'รหัสผ่านไม่ถูกต้อง' : 'โหลดรายชื่อไม่ได้' }; })
+      .catch(function () { MW.pn = { err: 'โหลดรายชื่อไม่ได้' }; }).then(function () { MW.pnBusy = false; mwRender(); });
   }
   function mwSum() {
     if (MW.loadingSum) return; MW.loadingSum = true;
@@ -488,7 +529,7 @@
     if (a === 'close') { MW.open = false; return mwRender(); }
     if (a === 'view') { MW.view = p[1]; return mwRender(); }
     if (a === 'me') { S.me = decodeURIComponent(p.slice(1).join(':')); put('asg_me', S.me); badge(); MW.view = 'me'; mwRender(); document.getElementById('mwBox').scrollIntoView({ behavior: 'smooth' }); return; }
-    if (a === 'print') { var bx = document.getElementById('mwBox'), ph = document.getElementById('mwPH'); if (ph) ph.remove(); if (bx) bx.insertAdjacentHTML('afterbegin', pHead(MW.view === 'me' ? 'สรุปงานรายบุคคล · ' + (S.me || '') : 'สรุปภาพรวมงานครู', MW.at)); document.body.classList.add('mw-printing'); window.print(); setTimeout(function () { document.body.classList.remove('mw-printing'); var p2 = document.getElementById('mwPH'); if (p2) p2.remove(); }, 800); return; }
+    if (a === 'print') { var bx = document.getElementById('mwBox'), ph = document.getElementById('mwPH'); if (ph) ph.remove(); if (bx) bx.insertAdjacentHTML('afterbegin', pHead(MW.view === 'me' ? 'สรุปงานรายบุคคล · ' + (S.me || '') : MW.view === 'dash' ? 'แดชบอร์ดภาพรวมการส่งงาน' : 'สรุปภาพรวมงานครู', MW.at)); document.body.classList.add('mw-printing'); window.print(); setTimeout(function () { document.body.classList.remove('mw-printing'); var p2 = document.getElementById('mwPH'); if (p2) p2.remove(); }, 800); return; }
     if (a === 'track') { document.body.classList.add('sks-open'); var hm = document.getElementById('home'); if (hm) hm.scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'proj') { document.body.classList.add('sks-open'); var tp = document.getElementById('topj'); if (tp) tp.click(); return; }
   }
@@ -593,11 +634,13 @@
         .then(function () { return firebase.messaging().getToken({ vapidKey: PUSH.vapid, serviceWorkerRegistration: reg }); });
     }).then(function (t) {
       if (!t) throw new Error('ไม่ได้รับรหัสเครื่อง');
-      return fetch(PUSH.url, { method: 'POST', body: JSON.stringify({ a: 'reg', t: t, d: pushIOS() ? 'iOS' : (/Android/i.test(navigator.userAgent) ? 'Android' : 'PC') }) })
-        .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error('ลงทะเบียนไม่สำเร็จ'); put('push_tk', t); put('push_at', String(Date.now())); return t; });
+      var nm = S.me || '';
+      return fetch(PUSH.url, { method: 'POST', body: JSON.stringify({ a: 'reg', t: t, n: nm, d: pushIOS() ? 'iOS' : (/Android/i.test(navigator.userAgent) ? 'Android' : 'PC') }) })
+        .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error('ลงทะเบียนไม่สำเร็จ'); put('push_tk', t); put('push_at', String(Date.now())); put('push_nm', nm); return t; });
     });
   }
   function pushEnable() {
+    if (!S.me) { MW.pushAsk = true; return pushUi(); }
     if (!pushOk()) { toast(pushIOS() && !pushStandalone() ? 'iPhone: ต้องเปิดจากไอคอน "ระบบงานโรงเรียน" บนหน้าจอโฮมก่อน (Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม)' : 'เครื่องหรือเบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
     Notification.requestPermission().then(function (p) {
       if (p !== 'granted') { toast('ยังไม่ได้อนุญาต — เปิดได้ที่ ตั้งค่า → การแจ้งเตือน → ระบบงานโรงเรียน'); return; }
@@ -611,13 +654,20 @@
   function pushUi() {
     var el = document.getElementById('pushBar'); if (!el) return;
     var on = pushOk() && Notification.permission === 'granted' && get('push_tk');
+    var ask = (!on && MW.pushAsk) || (on && !get('push_nm') && !S.me);
+    if (ask) { var L = pnames(); el.innerHTML = '<div class="push-btn push-ask">🔔 ' + (on ? 'ระบุชื่อสำหรับการแจ้งเตือน (ครั้งเดียว)' : 'เปิดการแจ้งเตือน') + '<small>เลือกชื่อของท่าน (ใช้ชื่อเดียวกับ "งานของฉัน")</small><select id="pushNm"><option value="">— เลือกชื่อ —</option>' + L.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select><button type="button" id="pushGo">' + (on ? 'บันทึกชื่อ' : 'เปิดการแจ้งเตือน') + '</button><small>เก็บแค่ชื่อกับรหัสเครื่องรับแจ้งเตือน ไม่เก็บเบอร์ อีเมล หรือข้อมูลอื่น</small></div>'; return; }
+    if (on && S.me && get('push_nm') !== S.me && !MW.pushSync) { MW.pushSync = true; pushToken().catch(function () {}).then(function () { MW.pushSync = false; }); }
     el.innerHTML = on ? '' : '<a href="#" id="pushBtn" class="push-btn">🔔 เปิดการแจ้งเตือน <small>เด้งเตือน + ตัวเลขบนไอคอน เมื่อมีประกาศ งานมอบหมาย สอนแทนใหม่</small></a>';
   }
   function pushBadge(n) { try { if (window.caches) caches.open('push-badge').then(function (c) { return c.put('n', new Response(String(n))); }).catch(function () {}); } catch (e) {} }
   function pushRefresh() { // รหัสเครื่องอาจเปลี่ยน → ส่งใหม่วันละครั้ง
     try { if (pushOk() && Notification.permission === 'granted' && get('push_tk') && Date.now() - Number(get('push_at') || 0) > 864e5) pushToken().catch(function () {}); } catch (e) {}
   }
-  document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#pushBtn')) { ev.preventDefault(); pushEnable(); } });
+  document.addEventListener('click', function (ev) {
+    if (ev.target.closest && ev.target.closest('#pushBtn')) { ev.preventDefault(); pushEnable(); }
+    if (ev.target.id === 'pushGo') { var v = (document.getElementById('pushNm') || {}).value; if (!v) return toast('กรุณาเลือกชื่อ'); S.me = v; put('asg_me', v); MW.pushAsk = false; badge(); render(); if (MW.open) mwRender();
+      if (pushOk() && Notification.permission === 'granted' && get('push_tk')) { pushToken().then(function () { pushUi(); toast('✅ บันทึกชื่อแล้ว'); }).catch(function () { toast('บันทึกชื่อไม่สำเร็จ ลองใหม่อีกครั้ง'); }); } else pushEnable(); }
+  });
   // 🔄 รีเฟรชอัตโนมัติ: ทุก 5 นาที + ทุกครั้งที่กลับมาเปิดแอป · มีเวอร์ชันใหม่ → โหลดหน้าใหม่เอง (ไม่โหลดขณะกำลังพิมพ์)
   function busyTyping() { var a = document.activeElement; return !!(a && /INPUT|TEXTAREA/.test(a.tagName) && a.value); }
   function refreshAll() { nwLoad(); loadUp(); load().catch(function () {}); }
@@ -759,6 +809,10 @@
     (function () { var lg = document.createElement('script'); lg.src = 'logos.js?v=1'; document.head.appendChild(lg); })();
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
+      '.push-ask select{display:block;width:100%;margin:8px 0 6px;padding:8px;border-radius:10px;border:0;font:inherit;font-size:15px;color:#111}.push-ask button{display:block;width:100%;padding:9px;border:0;border-radius:10px;background:#fff;color:#5B21B6;font:inherit;font-weight:700;font-size:15px;margin-bottom:4px;cursor:pointer}' +
+      '.db-card{background:#fff;border-radius:12px;padding:10px 12px;margin:8px 0;box-shadow:0 1px 3px rgba(0,0,0,.08)}.db-card h4{margin:0 0 8px;font-size:15px}.db-bar{display:grid;grid-template-columns:minmax(0,9.5em) 1fr 3.4em;align-items:center;gap:8px;font-size:13.5px;margin:6px 0}.db-bar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.db-bar b{text-align:right;font-size:13px}.db-tr{background:#EEF2F7;border-radius:6px;height:12px;overflow:hidden}.db-tr i{display:block;height:100%;border-radius:6px}' +
+      '.db-who{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;padding:6px 0;border-bottom:1px solid #F1F5F9}.db-who a{color:#1F2937;text-decoration:none}.db-pill{border-radius:99px;padding:1px 9px;font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap}.db-stack{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:4px 0 8px;background:#E2E8F0}.db-stack i{display:block;height:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}.db-tr i{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.db-lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}.db-lg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:var(--c)}.db-nt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.db-nt>div{border-radius:10px;padding:8px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.db-nt b{display:block}.db-on{background:#ECFDF5;border:1px solid #A7F3D0}.db-off{background:#FEF2F2;border:1px solid #FECACA}.db-note{font-size:12px;color:#6B7280;margin-top:6px}' +
       '.push-btn{display:block!important;background:linear-gradient(135deg,#7C3AED,#2563EB)!important;color:#fff!important;border:0!important;border-radius:14px!important;padding:10px 14px!important;margin-bottom:10px;font-size:16px;font-weight:700;text-decoration:none!important;text-align:left}.push-btn small{display:block;font-weight:400;font-size:12.5px;opacity:.9}' +
       '#rfBtn{position:fixed;right:12px;bottom:14px;z-index:95;width:58px;height:58px;border-radius:50%;border:0;background:#1D4ED8;color:#fff;font-size:22px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit}#rfBtn small{font-size:11px;margin-top:2px}#rfBtn.spin{opacity:.6}@media print{#rfBtn{display:none!important}}' +
       '@font-face{font-family:"SKF";src:local("TH SarabunPSK"),local("THSarabunPSK"),local("TH Sarabun New"),local("THSarabunNew");size-adjust:128%}' +
