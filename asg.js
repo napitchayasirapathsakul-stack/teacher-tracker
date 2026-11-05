@@ -667,6 +667,29 @@
     if (ev.target.id === 'pushGo') { var v = (document.getElementById('pushNm') || {}).value; if (!v) return toast('กรุณาเลือกชื่อ'); S.me = v; put('asg_me', v); MW.pushAsk = false; badge(); render(); if (MW.open) mwRender();
       if (pushOk() && Notification.permission === 'granted' && get('push_tk')) { pushToken().then(function () { pushUi(); toast('✅ บันทึกชื่อแล้ว'); }).catch(function () { toast('บันทึกชื่อไม่สำเร็จ ลองใหม่อีกครั้ง'); }); } else pushEnable(); }
   });
+  // 🔮 ดวงของฉันวันนี้ (โหลดไฟล์ horo.js เมื่อกดเท่านั้น)
+  function hrJobs(nm) {
+    return Promise.all([S.loaded ? 0 : load(), ttW().catch(function () { return null; }), S.acts ? 0 : loadActs()]).then(function () {
+      var td = today(), tm = new Date(Date.now() + 31 * 3600e3).toISOString().slice(0, 10), L = [];
+      asgOf(nm).forEach(function (x) { if ((x.st[nm] || {}).d) return; var d = days(x.u); if (d < 0) L.push([0, '⚠️ เลยกำหนด ' + (-d) + ' วัน · ' + esc(x.n)]); else if (d <= 3) L.push([1, '⏳ ' + esc(dueText(x)) + ' · ' + esc(x.n)]); });
+      var id = tid(nm); ((MW.W && MW.W.subs) || []).forEach(function (x) { if (id && x.t === id && (x.date === td || x.date === tm)) L.push([2, '🔄 สอนแทน' + (x.date === td ? 'วันนี้' : 'พรุ่งนี้') + ' คาบ ' + x.period + ' · ' + esc(x.cls) + ' ' + esc(x.subj)]); });
+      if (S.acts && !S.acts.err) S.acts.items.forEach(function (x) { if ((x.date === td || x.date === tm) && actMine(x, nm)) L.push([3, '🗓️ ' + (x.date === td ? 'วันนี้' : 'พรุ่งนี้') + (x.time ? ' ' + esc(x.time) : '') + ' · ' + esc(x.title)]); });
+      return L.sort(function (a, b) { return a[0] - b[0]; }).map(function (x) { return x[1]; });
+    });
+  }
+  var HR_API = {
+    me: function () { return S.me; }, names: function () { return pnames(); }, esc: esc, toast: toast, jobs: hrJobs,
+    setMe: function (v) { S.me = v; put('asg_me', v); badge(); render(); if (MW.open) mwRender(); },
+    horoNames: function () { return fetch(TT + '?api=horo').then(function (r) { return r.json(); }).then(function (j) { return j.ok ? j.data.names : []; }); },
+    birth: function (nm) { return fetch(TT + '?api=horo&n=' + encodeURIComponent(nm)).then(function (r) { return r.json(); }).then(function (j) { return j.ok ? j.data : null; }); }
+  };
+  function hrOpen() {
+    var box = document.getElementById('hrBox'); if (!box) return;
+    if (window.SKHoro) return window.SKHoro.open(box, HR_API);
+    box.style.display = ''; box.innerHTML = '<div class="asg-empty">กำลังเปิดดวงของฉันวันนี้…</div>';
+    var s = document.createElement('script'); s.src = 'horo.js?v=1'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
+  }
+  document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-hr-open]'); if (el) { ev.preventDefault(); hrOpen(); } });
   // 🔄 รีเฟรชอัตโนมัติ: ทุก 5 นาที + ทุกครั้งที่กลับมาเปิดแอป · มีเวอร์ชันใหม่ → โหลดหน้าใหม่เอง (ไม่โหลดขณะกำลังพิมพ์)
   function busyTyping() { var a = document.activeElement; return !!(a && /INPUT|TEXTAREA/.test(a.tagName) && a.value); }
   function refreshAll() { nwLoad(); loadUp(); load().catch(function () {}); }
@@ -771,7 +794,8 @@
     if (!links || document.getElementById('mwMenu')) return;
     var A = function (href, ic, tx, extra) { return '<a href="' + href + '"' + (extra || ' target="_top"') + '><span>' + ic + '</span>' + tx + '</a>'; };
     var html = '<div id="mwMenu"><div id="pushBar"></div><div id="nwBar"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
-      '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a></div>' +
+      '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a>' +
+      '<a href="#" data-hr-open="1" class="mw-b3"><span>🔮</span><div>ดวงของฉันวันนี้<small>งานของฉันวันนี้ · ดวงรายวันตามวันเกิด · ไพ่เลอนอร์ม็อง</small></div></a></div>' +
       '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้', ' target="_top" data-sec="subs"') + '</div>' +
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร', ' target="_top" data-sec="awards"') +
       A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open" data-sec="asg"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
@@ -794,6 +818,7 @@
     setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setupAutoRefresh();
     document.addEventListener('click', function (ev) { var u = ev.target.closest('[data-up]'); if (u) { ev.preventDefault(); UP.more = !UP.more; renderUp(); } });
     var mb = document.createElement('div'); mb.id = 'mwBox'; mb.style.display = 'none'; links.insertAdjacentElement('afterend', mb);
+    var hb = document.createElement('div'); hb.id = 'hrBox'; hb.style.display = 'none'; mb.insertAdjacentElement('afterend', hb);
   }
   // Admin เข้าครั้งเดียว: เข้า Admin ระบบติดตามแล้ว ใช้กับมอบหมายงานได้เลย
   function adminLink() {
@@ -867,7 +892,7 @@
       '.up-more{display:block!important;text-align:center;padding:6px!important;border:0!important;background:none!important;color:#BE185D!important;font-size:13.5px}' +
       '@media(max-width:700px){.up-body{grid-template-columns:minmax(0,1fr)}.up-cd{font-size:26px}}' +
       '.mw-big{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mw-big a{text-decoration:none!important;display:flex!important;gap:12px;align-items:center;padding:14px 16px!important;border-radius:14px!important;color:#fff!important;border:0!important;font-size:19px;font-weight:700}' +
-      '.mw-big a>span{font-size:32px}.mw-big small{display:block;font-weight:400;font-size:13px;opacity:.92}.mw-b1{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.mw-b2{background:linear-gradient(135deg,#7C3AED,#6D28D9)!important}' +
+      '.mw-big a>span{font-size:32px}.mw-big small{display:block;font-weight:400;font-size:13px;opacity:.92}.mw-b1{background:linear-gradient(135deg,#2563EB,#1D4ED8)!important}.mw-b2{background:linear-gradient(135deg,#7C3AED,#6D28D9)!important}.mw-b3{grid-column:1/-1;background:linear-gradient(135deg,#4C1D95,#BE185D)!important}' +
       '#mwBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);font-family:inherit}#mwBox .asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer}' +
       '.mw-top{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.mw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
       '.mw-sec{background:#fff;border-radius:12px;padding:10px 14px;border-left:5px solid #2563EB;box-shadow:0 1px 3px rgba(0,0,0,.06)}.mw-sec h4{margin:2px 0 6px;font-size:15.5px}' +
