@@ -364,7 +364,7 @@
   function card(x, inner) { var st = x._st || 'open'; return '<div class="asg-card" style="border-left-color:' + COL[st] + '">' + inner + '</div>'; }
   function head(x, st, label) {
     return '<span class="asg-b" style="background:' + BG[st] + ';color:' + COL[st] + '">' + esc(label) + '</span><div class="asg-t">' + esc(x.n) + '</div>' +
-      '<div class="asg-s">มอบหมาย ' + th(x.d) + ' · กำหนดส่ง <b>' + th(x.u) + '</b></div>' + (x.m ? '<div class="asg-m">' + esc(x.m) + '</div>' : '');
+      '<div class="asg-s">มอบหมาย ' + th(x.d) + ' · กำหนดส่ง <b>' + th(x.u) + '</b></div>' + (x.m ? amHtml(x.m) : '');
   }
   function viewMe() {
     var h = '<label class="asg-f">ชื่อของฉัน<select id="asgMe"><option value="">— เลือกชื่อของคุณ —</option>' + pnames().map(function (t) { return '<option' + (t === S.me ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></label>';
@@ -439,6 +439,46 @@
         (admin ? '<div class="asg-tools"><button class="asg-btn gh" data-asg="done:' + x.id + ':1:ALL">✅ เสร็จทุกคน</button><button class="asg-btn gh" data-asg="edit:' + x.id + '">✏️ แก้ไข</button><button class="asg-btn del" data-asg="del:' + x.id + '">🗑️ ลบ</button></div>' : ''));
     }).join('');
   }
+
+  // ---------- 🔗🖼️ ลิงก์และรูปประกอบงานมอบหมาย (เก็บต่อท้ายรายละเอียด: บรรทัด "🔗 ..." / "🖼️ ...") ----------
+  function amSplit(m) {
+    var t = [], L = [], I = [];
+    String(m || '').split('\n').forEach(function (ln) {
+      var a = ln.trim(), k;
+      if (a.indexOf('🔗 ') === 0 && /^https?:\/\/\S+$/.test(a.slice(3).trim())) L.push(a.slice(3).trim());
+      else if (a.indexOf('🖼️ ') === 0 && (k = a.match(/\/d\/([\w-]{20,})/))) I.push(k[1]);
+      else t.push(ln);
+    });
+    return { t: t.join('\n').replace(/\s+$/, ''), L: L, I: I };
+  }
+  function amJoin(t, L, I) {
+    return [String(t || '').replace(/\s+$/, '')].concat(L.map(function (u) { return '🔗 ' + u; }), I.map(function (id) { return '🖼️ https://drive.google.com/file/d/' + id + '/view'; })).filter(Boolean).join('\n');
+  }
+  function amLinkify(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>'; }); }
+  function amHtml(m) {
+    var x = amSplit(m), h = x.t ? '<div class="asg-m am-t">' + amLinkify(x.t) + '</div>' : '';
+    if (x.L.length) h += '<div class="am-ls">' + x.L.map(function (u) { return '<a class="am-l" href="' + esc(u) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์</a>'; }).join('') + '</div>';
+    if (x.I.length) h += '<div class="am-is">' + x.I.map(function (id) { return '<a href="https://drive.google.com/file/d/' + id + '/view" target="_blank" rel="noopener"><img loading="lazy" src="https://drive.google.com/thumbnail?id=' + id + '&sz=w600" alt="รูปประกอบ"></a>'; }).join('') + '</div>';
+    return h;
+  }
+  document.addEventListener('input', function (ev) { if (ev.target && ev.target.id === 'asgL' && S.form) S.form.l = ev.target.value; });
+  document.addEventListener('change', function (ev) {
+    var t = ev.target; if (!t || !S.form) return;
+    if (t.classList && t.classList.contains('amKeep')) { S.form.keep = [].filter.call(document.querySelectorAll('.amKeep'), function (c) { return c.checked; }).map(function (c) { return c.value; }); return; }
+    if (t.id !== 'asgI') return;
+    var fs = [].slice.call(t.files || []), room = 3 - (S.form.keep || []).length - (S.form.ni || []).length;
+    if (fs.length > room) { toast('แนบรูปได้รวมไม่เกิน 3 รูปต่องาน'); fs = fs.slice(0, Math.max(0, room)); }
+    Promise.all(fs.map(trShrink)).then(function (L) { S.form.ni = (S.form.ni || []).concat(L); amPrev(); }, function (e) { toast(e.message); });
+    t.value = '';
+  });
+  function amPrev() {
+    var b = document.getElementById('amNew'); if (!b || !S.form) return;
+    b.innerHTML = (S.form.ni || []).map(function (u, i) { return '<span class="am-n"><img src="' + u + '" alt=""><button type="button" data-amx="' + i + '" title="เอาออก">✕</button></span>'; }).join('');
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('[data-amx]'); if (!b || !S.form) return;
+    ev.preventDefault(); S.form.ni.splice(Number(b.getAttribute('data-amx')), 1); amPrev();
+  });
   function viewAdm() {
     if (!S.pw) return '<div class="asg-card"><div class="asg-s" style="color:#1D4ED8">การเพิ่ม/แก้ไขงาน ต้องเข้าสู่ระบบที่แท็บนี้ก่อน (แยกจากปุ่ม Admin ของระบบติดตาม) ใช้รหัสผ่านเดียวกัน</div><label class="asg-f">รหัสผ่านผู้บริหาร (รหัสเดียวกับระบบติดตาม)<input type="password" id="asgPw" autocomplete="current-password"></label><button class="asg-btn ok" data-asg="login">เข้าสู่ระบบ</button></div>';
     var f = S.form, h = '<div class="asg-tools"><button class="asg-btn gh" data-asg="logout">ออกจากระบบผู้บริหาร</button>' + (f ? '' : '<button class="asg-btn ok" data-asg="new">＋ มอบหมายงาน</button><button class="asg-btn gh" data-asg="owner">👤 เปลี่ยนผู้รับผิดชอบโครงการ</button><button class="asg-btn gh" data-asg="migrate" title="คัดลอกงานจาก ตารางงาน/ปฏิทินเดิม มาไว้ที่บันทึกมอบหมายงาน">📥 ย้ายงานจากปฏิทินเดิม</button>') + '</div>';
@@ -446,7 +486,10 @@
       h += '<div class="asg-card asg-form"><b>' + (f.id ? '✏️ แก้ไขงาน' : '＋ มอบหมายงาน') + '</b>' +
         '<div class="asg-row"><label class="asg-f">วันที่มอบหมาย<input type="date" id="asgD" value="' + esc(f.d) + '"></label><label class="asg-f">กำหนดส่ง *<input type="date" id="asgU" value="' + esc(f.u) + '"></label></div>' +
         '<label class="asg-f">เรื่อง *<input id="asgN" maxlength="200" value="' + esc(f.n) + '"></label>' +
-        '<label class="asg-f">รายละเอียด<textarea id="asgM" rows="3" maxlength="2000">' + esc(f.m) + '</textarea></label>' +
+        '<label class="asg-f">รายละเอียด<textarea id="asgM" rows="3" maxlength="1500">' + esc(amSplit(f.m).t) + '</textarea></label>' +
+        '<label class="asg-f">🔗 ลิงก์ (ถ้ามี เช่น ฟอร์มให้ครูกรอก หนังสือราชการ)<input id="asgL" type="url" inputmode="url" maxlength="400" placeholder="https://..." value="' + esc(f.l) + '"></label>' +
+        '<div class="asg-f">🖼️ แนบรูปภาพ (ไม่เกิน 3 รูป)' + (f.I.length ? '<div class="am-old">' + f.I.map(function (id) { return '<label><input type="checkbox" class="amKeep" value="' + id + '"' + (f.keep.indexOf(id) >= 0 ? ' checked' : '') + '><img src="https://drive.google.com/thumbnail?id=' + id + '&sz=w200" alt=""></label>'; }).join('') + '<small>เอาติ๊กออก = ไม่ใช้รูปนั้น</small></div>' : '') +
+        '<div id="amNew" class="am-new"></div><input type="file" id="asgI" accept="image/*" multiple></div>' +
         '<div class="asg-s" style="margin-top:6px">ผู้ได้รับมอบหมาย * (เลือกได้หลายคน) · <a href="#" data-asg="pick:t">เลือกครูทั้งหมด</a> · <a href="#" data-asg="pick:1">เลือกทุกคน</a> · <a href="#" data-asg="pick:0">ล้าง</a></div><div class="asg-chk">' +
         pgroups().map(function (g) { return '<div class="asg-grp">' + esc(g.grp) + ' <a href="#" data-asg="pickg:' + encodeURIComponent(g.grp) + '">เลือกทั้งกลุ่ม</a></div>' + g.list.map(function (p) { return '<label><input type="checkbox" name="asgA" data-g="' + esc(g.grp) + '" value="' + esc(p.name) + '"' + (f.a.indexOf(p.name) >= 0 ? ' checked' : '') + '> ' + esc(p.name) + (p.nick ? ' <small style="color:#6B7280">(' + esc(p.nick) + ')</small>' : '') + '</label>'; }).join(''); }).join('') + '</div>' +
         '<div class="asg-tools"><button class="asg-btn ok" data-asg="save">💾 บันทึก</button><button class="asg-btn gh" data-asg="cancel">ยกเลิก</button></div></div>';
@@ -486,13 +529,13 @@
       if (navigator.clipboard) navigator.clipboard.writeText(lk).then(ok, function () { window.prompt('คัดลอกลิงก์นี้', lk); }); else window.prompt('คัดลอกลิงก์นี้', lk);
       return;
     }
-    if (a === 'newfor') { S.tab = 'adm'; S.form = { id: '', d: today(), u: '', n: '', m: '', a: [decodeURIComponent(p.slice(1).join(':'))] }; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (a === 'newfor') { S.tab = 'adm'; S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], a: [decodeURIComponent(p.slice(1).join(':'))] }; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'openadm') { S.open = true; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); load().catch(function () {}); return; }
     if (a === 'pick') { [].forEach.call(document.querySelectorAll('[name=asgA]'), function (c) { c.checked = p[1] === '1' || (p[1] === 't' && S.teachers.indexOf(c.value) >= 0); }); return; }
     if (a === 'pickg') { var gg = decodeURIComponent(p.slice(1).join(':')), bx = [].filter.call(document.querySelectorAll('[name=asgA]'), function (c) { return c.getAttribute('data-g') === gg; }), on = bx.some(function (c) { return !c.checked; }); bx.forEach(function (c) { c.checked = on; }); return; }
-    if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', a: [] }; return render(); }
+    if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], a: [] }; return render(); }
     if (a === 'cancel') { S.form = null; return render(); }
-    if (a === 'edit') { var x = S.G.filter(function (q) { return q.id === p[1]; })[0]; S.form = { id: x.id, d: x.d, u: x.u, n: x.n, m: x.m, a: x.a.slice() }; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (a === 'edit') { var x = S.G.filter(function (q) { return q.id === p[1]; })[0]; var xs = amSplit(x.m); S.form = { id: x.id, d: x.d, u: x.u, n: x.n, m: x.m, l: xs.L[0] || '', I: xs.I, keep: xs.I.slice(), ni: [], a: x.a.slice() }; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'logout') { S.pw = ''; sput('asg_pw', ''); S.form = null; try { renderUp(); } catch (e) {} return render(); }
     if (S.busy) return;
     var job = null;
@@ -510,7 +553,16 @@
       var e = { d: document.getElementById('asgD').value, u: document.getElementById('asgU').value, n: document.getElementById('asgN').value, m: document.getElementById('asgM').value,
         a: [].map.call(document.querySelectorAll('[name=asgA]:checked'), function (c) { return c.value; }) };
       if (!e.n.trim()) return toast('กรุณาใส่เรื่อง'); if (!e.u) return toast('กรุณาใส่กำหนดส่ง'); if (e.u < e.d) return toast('กำหนดส่งต้องไม่ก่อนวันที่มอบหมาย'); if (!e.a.length) return toast('กรุณาเลือกครูอย่างน้อย 1 คน');
-      job = post({ a: 'asgsave', pw: S.pw, id: S.form.id || undefined, e: e }).then(function () { S.form = null; toast('บันทึกการมอบหมายงานแล้ว'); });
+      var lk = (document.getElementById('asgL').value || '').trim(), ff = S.form;
+      if (lk && !/^https?:\/\/\S+$/.test(lk)) return toast('ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https:// และไม่มีช่องว่าง');
+      var up = (ff.ni || []).length ? fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'asgimg', pw: S.pw, n: e.n, files: ff.ni.map(function (u) { return u.split(',')[1]; }) }) }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok) throw new Error(j.err === 'auth' ? 'รหัสผ่านผู้บริหารไม่ถูกต้องหรือหมดเวลา กรุณาเข้าสู่ระบบใหม่' : 'อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง'); return j.ids || []; }) : Promise.resolve([]);
+      toast('⏳ กำลังบันทึก…');
+      job = up.then(function (ids) {
+        e.m = amJoin(e.m, lk ? [lk] : [], (ff.keep || []).concat(ids));
+        if (e.m.length > 2000) throw new Error('รายละเอียดยาวเกินไป');
+        return post({ a: 'asgsave', pw: S.pw, id: ff.id || undefined, e: e });
+      }).then(function () { S.form = null; toast('บันทึกการมอบหมายงานแล้ว'); });
     }
     if (a === 'done') job = post({ a: 'asgdone', pw: S.pw, id: p[1], v: Number(p[2]), name: decodeURIComponent(p.slice(3).join(':')) });
     if (a === 'del') { if (!window.confirm('ลบงานนี้?')) return; job = post({ a: 'asgdel', pw: S.pw, id: p[1] }).then(function () { toast('ลบแล้ว'); }); }
@@ -544,7 +596,7 @@
     else h += open.map(function (x) {
       var g = x.st[nm] || {};
       return '<div class="row" style="align-items:flex-start"><span><span class="asg-b" style="background:' + BG[x._st] + ';color:' + COL[x._st] + '">' + esc(dueText(x)) + '</span><br><b>' + esc(x.n) + '</b>' +
-        '<br><small>มอบหมาย ' + th(x.d) + ' · กำหนดส่ง ' + th(x.u) + '</small>' + (x.m ? '<br><small style="white-space:pre-line">' + esc(x.m) + '</small>' : '') + '</span>' +
+        '<br><small>มอบหมาย ' + th(x.d) + ' · กำหนดส่ง ' + th(x.u) + '</small>' + (x.m ? '<div class="am-sm">' + amHtml(x.m) + '</div>' : '') + '</span>' +
         (g.k ? '<span class="asg-ok">👍 รับทราบแล้ว</span>' : '<button class="asg-btn ok" style="margin:0" data-asg="ackf:' + x.id + ':' + encodeURIComponent(nm) + '">👍 รับทราบ</button>') + '</div>';
     }).join('');
     h += '<div class="bt"><button class="o" data-asg="who:' + encodeURIComponent(nm) + '" onclick="window.scrollTo(0,0)">📌 ดูงานทั้งหมดในบันทึกมอบหมายงาน</button></div></div>';
@@ -1138,7 +1190,7 @@
       '#bdBan{display:flex;gap:10px;align-items:center;border-radius:16px;padding:8px 14px;margin:0 0 10px;color:#831843;background:linear-gradient(135deg,#FCE7F3,#FDF2F8 60%,#FEF3C7);border:2px solid #F9A8D4;box-sizing:border-box;max-width:100%}#bdBan img{width:52px;height:52px;flex:none}#bdBan div{min-width:0;overflow-wrap:anywhere}#bdBan b{display:block;font-size:18px}#bdBan span{font-size:14px}#bdBan small{display:block;font-size:13px;color:#9D174D}#bdBan.bd-soon{background:#FDF2F8;border-width:1px}#bdBan.bd-soon img{width:36px;height:36px}' +
       '.fb-link{text-align:center;margin:18px auto 80px;font-size:14px}.fb-link a{color:#4F46E5;text-decoration:none;border:1px solid #C7D2FE;border-radius:99px;padding:6px 14px;background:#fff;display:inline-block}@media print{#bdBan,.fb-link,#trBox,#fbBox{display:none!important}}' +
       '#ctBan{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border-radius:14px;padding:8px 12px;margin:0 0 10px;background:#ECFEFF;border:2px solid #67E8F9;color:#155E75;font-size:15px;box-sizing:border-box;max-width:100%}#ctBan span{min-width:0;overflow-wrap:anywhere}#ctBan button{border:0;border-radius:99px;padding:6px 14px;background:#0891B2;color:#fff;font:inherit;font-weight:700;cursor:pointer;flex:none}.ct-note{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:4px}@media print{#ctBan,#ctBox{display:none!important}}' +
-      '.up-done{opacity:.6}.ev-chip{display:inline-block;margin-top:3px;font-size:12.5px!important;line-height:1.6!important;font-weight:700;border-radius:99px;padding:1px 9px;max-width:100%;overflow-wrap:anywhere}.ev-ok{background:#DCFCE7;color:#166534}.ev-nil{background:#E0F2FE;color:#075985}.ev-no{background:#FEE2E2;color:#991B1B}.ev-mv{background:#FEF3C7;color:#92400E}.up-ed{flex:none;border:0;background:#EEF2FF;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px;margin-left:auto;align-self:center}.up-next .up-ed{margin-left:8px;vertical-align:middle;background:rgba(255,255,255,.6)}.up-next .ev-chip{display:block;width:max-content;margin-top:6px}' +
+      '.am-t{white-space:pre-line;overflow-wrap:anywhere}.am-t a{color:#1D4ED8;text-decoration:underline}.am-ls{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.am-l{display:inline-block;background:#EEF2FF;color:#3730A3;border-radius:99px;padding:5px 12px;font-weight:700;font-size:13.5px;text-decoration:none}.am-is{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.am-is img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #E5E7EB;display:block}.am-sm{font-size:13px;max-width:100%}.am-old,.am-new{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}.am-old label{display:flex;gap:4px;align-items:center}.am-old img,.am-n img{width:64px;height:64px;object-fit:cover;border-radius:8px;display:block}.am-old small{width:100%;color:#6B7280}.am-n{position:relative}.am-n button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#B91C1C;color:#fff;font-size:12px;cursor:pointer;line-height:22px;padding:0}#asgI{max-width:100%}.up-done{opacity:.6}.ev-chip{display:inline-block;margin-top:3px;font-size:12.5px!important;line-height:1.6!important;font-weight:700;border-radius:99px;padding:1px 9px;max-width:100%;overflow-wrap:anywhere}.ev-ok{background:#DCFCE7;color:#166534}.ev-nil{background:#E0F2FE;color:#075985}.ev-no{background:#FEE2E2;color:#991B1B}.ev-mv{background:#FEF3C7;color:#92400E}.up-ed{flex:none;border:0;background:#EEF2FF;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px;margin-left:auto;align-self:center}.up-next .up-ed{margin-left:8px;vertical-align:middle;background:rgba(255,255,255,.6)}.up-next .ev-chip{display:block;width:max-content;margin-top:6px}' +
       '.ev-opts{display:flex;flex-direction:column;gap:6px;margin:10px 0}.ev-opts label{display:flex;gap:10px;align-items:center;border:1px solid #E5E7EB;border-radius:12px;padding:8px 10px;cursor:pointer}.ev-opts label:has(input:checked){border-color:#4F46E5;background:#EEF2FF}.ev-opts span{display:flex;flex-direction:column}.ev-opts small{color:#6B7280;font-size:12.5px}@media print{.up-ed,#evBox{display:none!important}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
       '#asgBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}' +
