@@ -161,7 +161,7 @@
     try { fetch(NT, { method: 'POST', mode: 'no-cors', keepalive: true, body: JSON.stringify({ a: 'log', n: who(), m: m, dv: dev() }) }); } catch (e) {}
   }
   document.addEventListener('click', function (ev) {
-    var el = ev.target.closest && ev.target.closest('a,button'); if (!el || el.closest('#trBox,#fbBox')) return;
+    var el = ev.target.closest && ev.target.closest('a,button'); if (!el || el.closest('#trBox,#fbBox,#ctBox')) return;
     if (el.closest('.asg-chk,.asg-form') || el.type === 'submit') return;
     var t = (el.getAttribute('data-sec') || el.getAttribute('title') || el.textContent || '').replace(/\s+/g, ' ').trim();
     if (t.length >= 2 && !/^[\d✕×←→]+$/.test(t)) logU(t);
@@ -207,6 +207,59 @@
     el.innerHTML = '<img src="' + cake + '" alt="" onerror="this.remove()"><div>' + (L.length ? '<b>🎉 สุขสันต์วันเกิด ' + esc(L.join(', ')) + '</b><span>ร่วมส่งคำอวยพรกันนะคะ 🎁</span>' : '') +
       (S2.length ? '<small>เร็ว ๆ นี้: ' + S2.map(function (x) { return esc(x.name) + ' (' + (x.in === 1 ? 'พรุ่งนี้' : 'อีก ' + x.in + ' วัน') + ')'; }).join(' · ') + '</small>' : '') + '</div>';
   }
+  // ---------- 📇 ข้อมูลติดต่อส่วนบุคคล (อีเมลส่วนตัว · อีเมล edu · LINE ID) — เก็บในข้อมูลบุคลากร แอดมินเห็นคนเดียว ----------
+  var CT = { L: null };
+  function ctLoad() { fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'ctst' }) }).then(function (r) { return r.json(); }).then(function (j) { CT.L = j.L || []; ctBan(); if (S.open && S.tab === 'adm') render(); }, function () {}); }
+  function ctDone(nm) { var n = tnorm(nm), f = (CT.L || []).filter(function (x) { return x.n === n; })[0]; return !f || f.f; }
+  function ctBan() {
+    var up = document.getElementById('upBan'); if (!up || !CT.L) return;
+    var el = document.getElementById('ctBan'), me = who();
+    var need = me ? !ctDone(me) : !get('ct_done');
+    if (!need) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'ctBan'; up.parentNode.insertBefore(el, up); }
+    el.innerHTML = '<span>📇 ยังไม่ได้กรอกข้อมูลติดต่อ (อีเมล · LINE ID)</span><button data-ct="open">กรอกเลย</button>';
+  }
+  function ctAdm() {
+    if (!CT.L) { ctLoad(); return ''; }
+    var not = CT.L.filter(function (x) { return !x.f; });
+    return '<div class="asg-card" style="border-left-color:#0891B2"><b>📇 ข้อมูลติดต่อบุคลากร</b> <span class="asg-s">กรอกแล้ว ' + (CT.L.length - not.length) + '/' + CT.L.length + ' คน · ดูข้อมูลได้ที่แผ่น "ข้อมูลบุคลากร" (คอลัมน์ J–M) ในไฟล์ระบบตารางสอน</span>' +
+      (not.length ? '<div class="asg-s" style="margin-top:4px">ยังไม่กรอก: ' + not.map(function (x) { return esc(x.n); }).join(', ') + '</div>' : '<div class="asg-ok">✅ กรอกครบทุกคนแล้ว</div>') + '</div>';
+  }
+  function ctOpen() {
+    var w = document.getElementById('ctBox');
+    if (!w) { w = document.createElement('div'); w.id = 'ctBox'; document.body.appendChild(w); }
+    var me = who(), names = (CT.L && CT.L.length ? CT.L : (S.people || []).map(function (p) { return { n: p.name }; })).map(function (x) { return x.n; });
+    if (me && names.indexOf(me) < 0) names.unshift(me);
+    w.innerHTML = '<div class="tr-box"><div class="tr-hd"><b>📇 ข้อมูลติดต่อส่วนบุคคล</b><button data-ct="x" title="ปิด">✕</button></div>' +
+      '<div class="ct-note">🔒 ข้อมูลนี้ใช้เป็นข้อมูลส่วนบุคคล ไม่เผยแพร่</div>' +
+      '<label class="asg-f">ชื่อ *<select id="ctN"><option value="">— เลือกชื่อของคุณ —</option>' + names.map(function (n) { return '<option' + (n === me ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="asg-f">อีเมลส่วนตัว *<input id="ctE1" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="เช่น name@gmail.com"></label>' +
+      '<label class="asg-f">อีเมล edu *<input id="ctE2" type="email" inputmode="email" maxlength="120" placeholder="อีเมลที่หน่วยงานออกให้"></label>' +
+      '<label class="asg-f">LINE ID *<input id="ctL" maxlength="40" autocapitalize="off" autocomplete="off" placeholder="LINE ID ของคุณ"></label>' +
+      '<button class="asg-btn ok tr-go" data-ct="go">💾 บันทึก</button></div>';
+    w.style.display = 'flex';
+  }
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-ct]'), w = document.getElementById('ctBox');
+    if (!el) { if (w && ev.target === w) w.style.display = 'none'; return; }
+    ev.preventDefault(); var a = el.getAttribute('data-ct');
+    if (a === 'open') return ctOpen();
+    if (a === 'x') { w.style.display = 'none'; return; }
+    if (a === 'go') {
+      var re = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[A-Za-z]{2,}$/, n = document.getElementById('ctN').value, e1 = document.getElementById('ctE1').value.trim(), e2 = document.getElementById('ctE2').value.trim(), ln = document.getElementById('ctL').value.trim();
+      if (!n) return toast('กรุณาเลือกชื่อ');
+      if (!re.test(e1)) return toast('อีเมลส่วนตัวไม่ถูกต้อง');
+      if (!re.test(e2)) return toast('อีเมล edu ไม่ถูกต้อง');
+      if (!ln) return toast('กรุณากรอก LINE ID');
+      if (!/^[A-Za-z0-9._@\-]{2,40}$/.test(ln)) return toast('LINE ID ใช้ได้เฉพาะอักษรอังกฤษ ตัวเลข . _ -');
+      el.disabled = true; el.textContent = '⏳ กำลังบันทึก…';
+      fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'contact', n: n, e1: e1, e2: e2, ln: ln }) }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok) throw new Error(j.err || 'บันทึกไม่สำเร็จ');
+        put('ct_done', '1'); (CT.L || []).forEach(function (x) { if (x.n === tnorm(n)) x.f = true; });
+        w.style.display = 'none'; ctBan(); toast('✅ บันทึกข้อมูลติดต่อแล้ว ขอบคุณค่ะ');
+      }).catch(function (e) { el.disabled = false; el.textContent = '💾 บันทึก'; toast(e.message || 'บันทึกไม่สำเร็จ'); });
+    }
+  });
   function state(x, nm) {
     var g = x.st[nm] || {};
     if (g.d) return 'done';
@@ -269,7 +322,7 @@
     var h = '<div class="asg-head"><b>📌 บันทึกการมอบหมายงาน</b><button data-asg="close" title="ปิด">✕</button></div>';
     h += '<div class="asg-tabs"><button data-asg="tab:me" class="' + (S.tab === 'me' ? 'on' : '') + '">📌 งานมอบหมายของฉัน</button><button data-asg="tab:all" class="' + (S.tab === 'all' ? 'on' : '') + '">🗂️ งานทั้งหมด</button><button data-asg="tab:ppl" class="' + (S.tab === 'ppl' ? 'on' : '') + '">👥 รายบุคคล</button><button data-asg="tab:adm" class="' + (S.tab === 'adm' ? 'on' : '') + '">✏️ แก้ไข (Admin)</button></div>';
     if (S.old) h += '<div class="asg-card" style="border-left-color:#B91C1C;background:#FEF2F2"><b>⚠️ ระบบติดตาม (Apps Script) ยังไม่ได้อัปเดตโค้ดมอบหมายงาน</b><div class="asg-s">ให้นำไฟล์ ระบบติดตาม_Code.txt ไปวางแทนโค้ดเดิม แล้วกด ทำให้ใช้งานได้ → จัดการการทำให้ใช้งานได้ → แก้ไข → เวอร์ชันใหม่</div></div>';
-    if (S.tab === 'me') h += viewMe(); else if (S.tab === 'all') h += viewAll(false); else if (S.tab === 'ppl') h += viewPpl(); else h += viewAdm();
+    if (S.tab === 'me') h += viewMe(); else if (S.tab === 'all') h += viewAll(false); else if (S.tab === 'ppl') h += viewPpl(); else h += viewAdm() + (S.pw ? ctAdm() : '');
     box.innerHTML = h;
   }
   function card(x, inner) { var st = x._st || 'open'; return '<div class="asg-card" style="border-left-color:' + COL[st] + '">' + inner + '</div>'; }
@@ -713,7 +766,7 @@
   }
   var TMS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], TWD = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   function renderUp() {
-    var el = document.getElementById('upBan'); bdDraw(); if (!el || UP.items === null) return;
+    var el = document.getElementById('upBan'); bdDraw(); ctBan(); if (!el || UP.items === null) return;
     var td = today(), L = UP.items.slice();
     S.G.forEach(function (x) {
       var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }); if (!open.length || x.u < td) return;
@@ -1041,11 +1094,12 @@
       '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '@media(max-width:600px){.mw-wrap{overflow-x:visible!important}.mw-t{width:100%!important;min-width:0!important;table-layout:fixed;font-size:11.5px}.mw-t th{font-size:10px!important;line-height:1.25;padding:4px 1px!important;word-break:normal;overflow-wrap:anywhere;white-space:normal!important}.mw-t td{padding:4px 1px!important}.mw-t th:first-child,.mw-t td:first-child{width:30%;text-align:left}.mw-t td:first-child,.mw-t td:first-child *{white-space:normal!important;overflow-wrap:anywhere}.mw-t td:first-child{overflow:hidden}}' +
       '.tr-need{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:14px;color:#3730A3}.tr-need.late{background:#FEF2F2;border-color:#FECACA;color:#991B1B}.tr-need .asg-btn{margin:0}.asg-btn.tr{background:#4F46E5;color:#fff;border-color:#4F46E5}' +
-      '#trBox,#fbBox{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:120;align-items:center;justify-content:center;padding:12px}.tr-box{background:#fff;color:#111;border-radius:16px;padding:14px;width:100%;max-width:460px;max-height:92vh;overflow:auto;box-sizing:border-box}.tr-hd{display:flex;justify-content:space-between;align-items:center;font-size:18px;margin-bottom:8px}.tr-hd button{border:0;background:#E5E7EB;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none}' +
+      '#trBox,#fbBox,#ctBox{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:120;align-items:center;justify-content:center;padding:12px}.tr-box{background:#fff;color:#111;border-radius:16px;padding:14px;width:100%;max-width:460px;max-height:92vh;overflow:auto;box-sizing:border-box}.tr-hd{display:flex;justify-content:space-between;align-items:center;font-size:18px;margin-bottom:8px}.tr-hd button{border:0;background:#E5E7EB;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none}' +
       '.tr-topic{background:#EEF2FF;border-radius:12px;padding:10px 12px;font-weight:700;font-size:16.5px;color:#312E81;overflow-wrap:anywhere}.tr-topic small{display:block;font-weight:400;font-size:12.5px;color:#4338CA}.tr-imgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 6px}.tr-imgs figure{margin:0;position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid #E5E7EB}.tr-imgs img{width:100%;height:100%;object-fit:cover}.tr-imgs figure button{position:absolute;top:4px;right:4px;border:0;border-radius:50%;width:26px;height:26px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}' +
       '.tr-add{aspect-ratio:3/4;border:2px dashed #A5B4FC;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4F46E5;font-size:28px;cursor:pointer;background:#F5F7FF;text-align:center}.tr-add span{font-size:13px;font-weight:700}.tr-add input{display:none}.tr-go{display:block;width:100%;padding:10px;font-size:16px;margin-top:10px}' +
       '#bdBan{display:flex;gap:10px;align-items:center;border-radius:16px;padding:8px 14px;margin:0 0 10px;color:#831843;background:linear-gradient(135deg,#FCE7F3,#FDF2F8 60%,#FEF3C7);border:2px solid #F9A8D4;box-sizing:border-box;max-width:100%}#bdBan img{width:52px;height:52px;flex:none}#bdBan div{min-width:0;overflow-wrap:anywhere}#bdBan b{display:block;font-size:18px}#bdBan span{font-size:14px}#bdBan small{display:block;font-size:13px;color:#9D174D}#bdBan.bd-soon{background:#FDF2F8;border-width:1px}#bdBan.bd-soon img{width:36px;height:36px}' +
       '.fb-link{text-align:center;margin:18px auto 80px;font-size:14px}.fb-link a{color:#4F46E5;text-decoration:none;border:1px solid #C7D2FE;border-radius:99px;padding:6px 14px;background:#fff;display:inline-block}@media print{#bdBan,.fb-link,#trBox,#fbBox{display:none!important}}' +
+      '#ctBan{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border-radius:14px;padding:8px 12px;margin:0 0 10px;background:#ECFEFF;border:2px solid #67E8F9;color:#155E75;font-size:15px;box-sizing:border-box;max-width:100%}#ctBan span{min-width:0;overflow-wrap:anywhere}#ctBan button{border:0;border-radius:99px;padding:6px 14px;background:#0891B2;color:#fff;font:inherit;font-weight:700;cursor:pointer;flex:none}.ct-note{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:4px}@media print{#ctBan,#ctBox{display:none!important}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
       '#asgBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}' +
       '.asg-head{display:flex;justify-content:space-between;align-items:center;font-size:19px;margin-bottom:8px}.asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px}' +
@@ -1133,7 +1187,7 @@
     anchor.parentNode.insertBefore(ban, anchor);
     var t = document.createElement('div'); t.id = 'asgToast'; document.body.appendChild(t);
     document.addEventListener('click', click); document.addEventListener('change', change);
-    bdLoad(); logU('เปิดแอป');
+    bdLoad(); logU('เปิดแอป'); ctLoad();
     (function () { var f = document.createElement('div'); f.className = 'fb-link'; f.innerHTML = '<a href="#" data-fb="open">💬 แจ้งปัญหา / เสนอแนะการใช้งานแอป</a>'; document.body.appendChild(f); })();
     document.addEventListener('click', mwClick); document.addEventListener('change', mwChange);
     if (/[?&]my\b/.test(location.search)) setTimeout(function () { mwOpen('me'); }, 300);
