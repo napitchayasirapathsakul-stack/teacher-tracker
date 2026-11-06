@@ -161,7 +161,7 @@
     try { fetch(NT, { method: 'POST', mode: 'no-cors', keepalive: true, body: JSON.stringify({ a: 'log', n: who(), m: m, dv: dev() }) }); } catch (e) {}
   }
   document.addEventListener('click', function (ev) {
-    var el = ev.target.closest && ev.target.closest('a,button'); if (!el || el.closest('#trBox,#fbBox,#ctBox')) return;
+    var el = ev.target.closest && ev.target.closest('a,button'); if (!el || el.closest('#trBox,#fbBox,#ctBox,#evBox')) return;
     if (el.closest('.asg-chk,.asg-form') || el.type === 'submit') return;
     var t = (el.getAttribute('data-sec') || el.getAttribute('title') || el.textContent || '').replace(/\s+/g, ' ').trim();
     if (t.length >= 2 && !/^[\d✕×←→]+$/.test(t)) logU(t);
@@ -258,6 +258,42 @@
         put('ct_done', '1'); (CT.L || []).forEach(function (x) { if (x.n === tnorm(n)) x.f = true; });
         w.style.display = 'none'; ctBan(); toast('✅ บันทึกข้อมูลติดต่อแล้ว ขอบคุณค่ะ');
       }).catch(function (e) { el.disabled = false; el.textContent = '💾 บันทึก'; toast(e.message || 'บันทึกไม่สำเร็จ'); });
+    }
+  });
+  // ---------- 🏷️ สถานะกิจกรรมในปฏิทิน (แอดมินตั้งเท่านั้น · ครูเห็นอย่างเดียว) ----------
+  var EV = { M: null }, EVI = { 'เสร็จสิ้น': ['✅', 'ok'], 'เสร็จสิ้น (ไม่มีรายการ)': ['⭕', 'nil'], 'ไม่เข้าร่วม': ['🚫', 'no'], 'เลื่อน / ยกเลิก': ['📅', 'mv'] };
+  function evk(x) { return x.date + '|' + String(x.title || '').replace(/[\s.()\-–]/g, '').slice(0, 60); }
+  function evLoad() { fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'evst' }) }).then(function (r) { return r.json(); }).then(function (j) { EV.M = j.M || {}; try { renderUp(); } catch (e) {} }, function () {}); }
+  function evChip(x) { var e = x._ev; if (!e) return ''; var i = EVI[e.s] || ['✅', 'ok']; return '<span class="ev-chip ev-' + i[1] + '">' + i[0] + ' ' + esc(e.s) + (e.n ? ' · ' + esc(e.n) : '') + '</span>'; }
+  function evBtn(x) { return S.pw ? '<button class="up-ed" data-ev="' + encodeURIComponent(x._k) + '" title="ตั้งสถานะ (แอดมิน)">✏️</button>' : ''; }
+  function evOpen(k) {
+    var x = (UP._L || {})[k]; if (!x) return;
+    var w = document.getElementById('evBox'); if (!w) { w = document.createElement('div'); w.id = 'evBox'; document.body.appendChild(w); }
+    var cur = (x._ev || {}).s || '', opts = [['เสร็จสิ้น', '✅ เสร็จสิ้น', 'ทำแล้ว ส่งแล้ว เข้าร่วมแล้ว'], ['เสร็จสิ้น (ไม่มีรายการ)', '⭕ เสร็จสิ้น (ไม่มีรายการ)', 'ตรวจแล้วไม่มีอะไรต้องส่ง'], ['ไม่เข้าร่วม', '🚫 ไม่เข้าร่วม', 'ระบุเหตุผลได้'], ['เลื่อน / ยกเลิก', '📅 เลื่อน / ยกเลิก', 'ผู้จัดเลื่อนหรือยกเลิก'], ['', '↩️ ยังไม่ปิด', 'ล้างสถานะ']];
+    w.innerHTML = '<div class="tr-box"><div class="tr-hd"><b>🏷️ สถานะกิจกรรม</b><button data-evm="x" title="ปิด">✕</button></div>' +
+      '<div class="tr-topic"><small>เรื่อง</small>' + esc(x.title) + '<small>' + esc(th(x.date)) + (x.time ? ' · ' + esc(x.time) : '') + '</small></div>' +
+      '<div class="ev-opts">' + opts.map(function (o) { return '<label><input type="radio" name="evS" value="' + esc(o[0]) + '"' + (o[0] === cur ? ' checked' : '') + '><span><b>' + o[1] + '</b><small>' + o[2] + '</small></span></label>'; }).join('') + '</div>' +
+      '<label class="asg-f">หมายเหตุ (ถ้ามี)<input id="evN" maxlength="120" value="' + esc((x._ev || {}).n || '') + '" placeholder="เช่น ไม่มีนักเรียนผ่านเกณฑ์คัดกรอง"></label>' +
+      '<button class="asg-btn ok tr-go" data-evm="go" data-k="' + encodeURIComponent(k) + '">💾 บันทึกสถานะ</button></div>';
+    w.style.display = 'flex';
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('[data-ev]'); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation(); evOpen(decodeURIComponent(b.getAttribute('data-ev')));
+  }, true);
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-evm]'), w = document.getElementById('evBox');
+    if (!el) { if (w && ev.target === w) w.style.display = 'none'; return; }
+    ev.preventDefault(); var a = el.getAttribute('data-evm');
+    if (a === 'x') { w.style.display = 'none'; return; }
+    if (a === 'go') {
+      var k = decodeURIComponent(el.getAttribute('data-k')), x = (UP._L || {})[k], r = w.querySelector('input[name=evS]:checked');
+      if (!x || !r) return toast('กรุณาเลือกสถานะ');
+      el.disabled = true; el.textContent = '⏳ กำลังบันทึก…';
+      fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'evset', pw: S.pw, k: k, s: r.value, n: document.getElementById('evN').value, d: x.date, t: x.title }) }).then(function (res) { return res.json(); }).then(function (j) {
+        if (!j.ok) throw new Error(j.err === 'auth' ? 'รหัสผ่านผู้บริหารไม่ถูกต้องหรือหมดเวลา กรุณาเข้าสู่ระบบใหม่' : j.err === 'busy' ? 'ระบบไม่ว่าง ลองใหม่อีกครั้ง' : 'บันทึกไม่สำเร็จ');
+        EV.M = j.M || {}; w.style.display = 'none'; renderUp(); toast('✅ บันทึกสถานะแล้ว');
+      }).catch(function (e) { el.disabled = false; el.textContent = '💾 บันทึกสถานะ'; toast(e.message || 'บันทึกไม่สำเร็จ'); });
     }
   });
   function state(x, nm) {
@@ -457,7 +493,7 @@
     if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', a: [] }; return render(); }
     if (a === 'cancel') { S.form = null; return render(); }
     if (a === 'edit') { var x = S.G.filter(function (q) { return q.id === p[1]; })[0]; S.form = { id: x.id, d: x.d, u: x.u, n: x.n, m: x.m, a: x.a.slice() }; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
-    if (a === 'logout') { S.pw = ''; sput('asg_pw', ''); S.form = null; return render(); }
+    if (a === 'logout') { S.pw = ''; sput('asg_pw', ''); S.form = null; try { renderUp(); } catch (e) {} return render(); }
     if (S.busy) return;
     var job = null;
     if (a === 'ack') job = post({ a: 'asgack', id: p[1], name: S.me }).then(function () { toast('รับทราบงานแล้ว'); });
@@ -469,7 +505,7 @@
       if (!window.confirm('เปลี่ยนผู้รับผิดชอบโครงการทุกรายการ\nจาก: ' + fr + '\nเป็น: ' + to)) return;
       job = post({ a: 'pjowner', pw: S.pw, from: fr.trim(), to: to.trim() }).then(function (j) { MW.P = null; toast('เปลี่ยนแล้ว ' + j.n + ' รายการ'); });
     }
-    if (a === 'login') { var pw = document.getElementById('asgPw').value; job = post({ a: 'all', pw: pw }).then(function () { S.pw = pw; sput('asg_pw', pw); toast('เข้าสู่ระบบผู้บริหารแล้ว'); }); }
+    if (a === 'login') { var pw = document.getElementById('asgPw').value; job = post({ a: 'all', pw: pw }).then(function () { S.pw = pw; sput('asg_pw', pw); try { renderUp(); } catch (e) {} toast('เข้าสู่ระบบผู้บริหารแล้ว'); }); }
     if (a === 'save') {
       var e = { d: document.getElementById('asgD').value, u: document.getElementById('asgU').value, n: document.getElementById('asgN').value, m: document.getElementById('asgM').value,
         a: [].map.call(document.querySelectorAll('[name=asgA]:checked'), function (c) { return c.value; }) };
@@ -787,6 +823,8 @@
       if (x.src === 'asg') y.asgId = x.id;
     });
     L = keep.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
+    UP._L = {}; L.forEach(function (x) { x._k = evk(x); x._ev = EV.M ? EV.M[x._k] || null : null; UP._L[x._k] = x; });
+    L = L.filter(function (x) { return !x._ev; }).concat(L.filter(function (x) { return x._ev; }));
     var dd = function (x) { var d = days(x.date); return x.date < td ? 'กำลังดำเนินการ' : d === 0 ? 'วันนี้!' : d === 1 ? 'พรุ่งนี้' : 'อีก ' + d + ' วัน'; };
     var lvl = function (x) { var d = days(x.date); return d <= 0 ? 'u0' : d <= 2 ? 'u1' : d <= 7 ? 'u2' : 'u3'; };
     var dt = function (x) { var p = x.date.split('-').map(Number), w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); return { d: p[2], m: TMS[p[1] - 1], w: TWD[w] }; };
@@ -795,8 +833,8 @@
     var h = '<div class="up-wrap"><div class="up-head"><div><b>⏰ งานที่ใกล้จะถึง</b><small>อีก 14 วันข้างหน้า · ' + L.length + ' รายการ</small></div><div class="up-legend"><span style="background:#0E7490">ปฏิทินงานโรงเรียน</span><span style="background:#B91C1C">กำหนดส่งงาน</span></div></div>' +
       '<div class="up-body"><a class="up-next ' + lvl(f) + '"' + go(f) + '><div class="up-cd">' + esc(dd(f)) + '</div><div class="up-nt">' + esc(f.title) + '</div>' +
       '<div class="up-nm">' + esc('วัน' + fd.w + 'ที่ ' + fd.d + ' ' + fd.m) + (f.time ? ' · ' + esc(f.time) + ' น.' : '') + (f.place ? ' · 📍 ' + esc(f.place) : '') + '</div>' + (f.who ? '<div class="up-nm">👥 ' + esc(f.who) + '</div>' : '') +
-      '<span class="up-tag" style="background:rgba(255,255,255,.25)">' + TAG[f.src][0] + '</span></a><div class="up-list">' +
-      rest.map(function (x) { var d = dt(x); return '<a class="up-it"' + go(x) + '><span class="up-date ' + lvl(x) + '"><b>' + d.d + '</b>' + d.m + '</span><span class="up-tx"><b>' + esc(x.title) + '</b><small><i style="background:' + TAG[x.src][1] + '"></i>' + esc(dd(x)) + (x.time ? ' · ' + esc(x.time) : '') + (x.who ? ' · ' + esc(x.who) : '') + '</small></span></a>'; }).join('') +
+      '<span class="up-tag" style="background:rgba(255,255,255,.25)">' + TAG[f.src][0] + '</span>' + evBtn(f) + evChip(f) + '</a><div class="up-list">' +
+      rest.map(function (x) { var d = dt(x); return '<a class="up-it' + (x._ev ? ' up-done' : '') + '"' + go(x) + '><span class="up-date ' + lvl(x) + '"><b>' + d.d + '</b>' + d.m + '</span><span class="up-tx"><b>' + esc(x.title) + '</b><small><i style="background:' + TAG[x.src][1] + '"></i>' + esc(dd(x)) + (x.time ? ' · ' + esc(x.time) : '') + (x.who ? ' · ' + esc(x.who) : '') + '</small>' + evChip(x) + '</span>' + evBtn(x) + '</a>'; }).join('') +
       (L.length > 7 ? '<a class="up-more" href="#" data-up="more">' + (UP.more ? 'ย่อ ▲' : 'ดูทั้งหมด ' + L.length + ' รายการ ▼') + '</a>' : '') + '</div></div></div>';
     el.innerHTML = h;
   }
@@ -1073,7 +1111,7 @@
     var cand = '';
     document.addEventListener('click', function (ev) { if (ev.target.id === 'lgo') { var pw = document.getElementById('pw'); cand = pw ? pw.value : ''; } if (ev.target.id === 'lgx') { S.pw = ''; sput('asg_pw', ''); render(); } }, true);
     document.addEventListener('keydown', function (ev) { if (ev.target.id === 'pw' && ev.key === 'Enter') cand = ev.target.value; }, true);
-    setInterval(function () { var ad = document.getElementById('admin'); if (cand && ad && !ad.hidden) { S.pw = cand; sput('asg_pw', cand); cand = ''; render(); } }, 800);
+    setInterval(function () { var ad = document.getElementById('admin'); if (cand && ad && !ad.hidden) { S.pw = cand; sput('asg_pw', cand); cand = ''; render(); try { renderUp(); } catch (e) {} } }, 800);
   }
 
   function init() {
@@ -1094,12 +1132,14 @@
       '#mwMenu a.adm-edit,#mwMenu .nb-head a.adm-edit,#mwMenu .h a.adm-edit,button.adm-edit,a.adm-edit{display:inline-block!important;background:#F59E0B!important;color:#fff!important;border:0!important;border-radius:99px!important;padding:3px 12px!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;cursor:pointer;margin-left:6px;line-height:1.5;min-height:0!important;width:auto!important}#mwMenu a.adm-edit:hover,button.adm-edit:hover{background:#D97706!important}' +
       '@media(max-width:600px){.mw-wrap{overflow-x:visible!important}.mw-t{width:100%!important;min-width:0!important;table-layout:fixed;font-size:11.5px}.mw-t th{font-size:10px!important;line-height:1.25;padding:4px 1px!important;word-break:normal;overflow-wrap:anywhere;white-space:normal!important}.mw-t td{padding:4px 1px!important}.mw-t th:first-child,.mw-t td:first-child{width:30%;text-align:left}.mw-t td:first-child,.mw-t td:first-child *{white-space:normal!important;overflow-wrap:anywhere}.mw-t td:first-child{overflow:hidden}}' +
       '.tr-need{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:14px;color:#3730A3}.tr-need.late{background:#FEF2F2;border-color:#FECACA;color:#991B1B}.tr-need .asg-btn{margin:0}.asg-btn.tr{background:#4F46E5;color:#fff;border-color:#4F46E5}' +
-      '#trBox,#fbBox,#ctBox{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:120;align-items:center;justify-content:center;padding:12px}.tr-box{background:#fff;color:#111;border-radius:16px;padding:14px;width:100%;max-width:460px;max-height:92vh;overflow:auto;box-sizing:border-box}.tr-hd{display:flex;justify-content:space-between;align-items:center;font-size:18px;margin-bottom:8px}.tr-hd button{border:0;background:#E5E7EB;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none}' +
+      '#trBox,#fbBox,#ctBox,#evBox{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:120;align-items:center;justify-content:center;padding:12px}.tr-box{background:#fff;color:#111;border-radius:16px;padding:14px;width:100%;max-width:460px;max-height:92vh;overflow:auto;box-sizing:border-box}.tr-hd{display:flex;justify-content:space-between;align-items:center;font-size:18px;margin-bottom:8px}.tr-hd button{border:0;background:#E5E7EB;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none}' +
       '.tr-topic{background:#EEF2FF;border-radius:12px;padding:10px 12px;font-weight:700;font-size:16.5px;color:#312E81;overflow-wrap:anywhere}.tr-topic small{display:block;font-weight:400;font-size:12.5px;color:#4338CA}.tr-imgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 6px}.tr-imgs figure{margin:0;position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid #E5E7EB}.tr-imgs img{width:100%;height:100%;object-fit:cover}.tr-imgs figure button{position:absolute;top:4px;right:4px;border:0;border-radius:50%;width:26px;height:26px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}' +
       '.tr-add{aspect-ratio:3/4;border:2px dashed #A5B4FC;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4F46E5;font-size:28px;cursor:pointer;background:#F5F7FF;text-align:center}.tr-add span{font-size:13px;font-weight:700}.tr-add input{display:none}.tr-go{display:block;width:100%;padding:10px;font-size:16px;margin-top:10px}' +
       '#bdBan{display:flex;gap:10px;align-items:center;border-radius:16px;padding:8px 14px;margin:0 0 10px;color:#831843;background:linear-gradient(135deg,#FCE7F3,#FDF2F8 60%,#FEF3C7);border:2px solid #F9A8D4;box-sizing:border-box;max-width:100%}#bdBan img{width:52px;height:52px;flex:none}#bdBan div{min-width:0;overflow-wrap:anywhere}#bdBan b{display:block;font-size:18px}#bdBan span{font-size:14px}#bdBan small{display:block;font-size:13px;color:#9D174D}#bdBan.bd-soon{background:#FDF2F8;border-width:1px}#bdBan.bd-soon img{width:36px;height:36px}' +
       '.fb-link{text-align:center;margin:18px auto 80px;font-size:14px}.fb-link a{color:#4F46E5;text-decoration:none;border:1px solid #C7D2FE;border-radius:99px;padding:6px 14px;background:#fff;display:inline-block}@media print{#bdBan,.fb-link,#trBox,#fbBox{display:none!important}}' +
       '#ctBan{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border-radius:14px;padding:8px 12px;margin:0 0 10px;background:#ECFEFF;border:2px solid #67E8F9;color:#155E75;font-size:15px;box-sizing:border-box;max-width:100%}#ctBan span{min-width:0;overflow-wrap:anywhere}#ctBan button{border:0;border-radius:99px;padding:6px 14px;background:#0891B2;color:#fff;font:inherit;font-weight:700;cursor:pointer;flex:none}.ct-note{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:4px}@media print{#ctBan,#ctBox{display:none!important}}' +
+      '.up-done{opacity:.6}.ev-chip{display:inline-block;margin-top:3px;font-size:12.5px!important;line-height:1.6!important;font-weight:700;border-radius:99px;padding:1px 9px;max-width:100%;overflow-wrap:anywhere}.ev-ok{background:#DCFCE7;color:#166534}.ev-nil{background:#E0F2FE;color:#075985}.ev-no{background:#FEE2E2;color:#991B1B}.ev-mv{background:#FEF3C7;color:#92400E}.up-ed{flex:none;border:0;background:#EEF2FF;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px;margin-left:auto;align-self:center}.up-next .up-ed{margin-left:8px;vertical-align:middle;background:rgba(255,255,255,.6)}.up-next .ev-chip{display:block;width:max-content;margin-top:6px}' +
+      '.ev-opts{display:flex;flex-direction:column;gap:6px;margin:10px 0}.ev-opts label{display:flex;gap:10px;align-items:center;border:1px solid #E5E7EB;border-radius:12px;padding:8px 10px;cursor:pointer}.ev-opts label:has(input:checked){border-color:#4F46E5;background:#EEF2FF}.ev-opts span{display:flex;flex-direction:column}.ev-opts small{color:#6B7280;font-size:12.5px}@media print{.up-ed,#evBox{display:none!important}}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
       '#asgBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}' +
       '.asg-head{display:flex;justify-content:space-between;align-items:center;font-size:19px;margin-bottom:8px}.asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px}' +
@@ -1187,7 +1227,7 @@
     anchor.parentNode.insertBefore(ban, anchor);
     var t = document.createElement('div'); t.id = 'asgToast'; document.body.appendChild(t);
     document.addEventListener('click', click); document.addEventListener('change', change);
-    bdLoad(); logU('เปิดแอป'); ctLoad();
+    bdLoad(); logU('เปิดแอป'); ctLoad(); evLoad();
     (function () { var f = document.createElement('div'); f.className = 'fb-link'; f.innerHTML = '<a href="#" data-fb="open">💬 แจ้งปัญหา / เสนอแนะการใช้งานแอป</a>'; document.body.appendChild(f); })();
     document.addEventListener('click', mwClick); document.addEventListener('change', mwChange);
     if (/[?&]my\b/.test(location.search)) setTimeout(function () { mwOpen('me'); }, 300);
