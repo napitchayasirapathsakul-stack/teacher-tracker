@@ -1015,7 +1015,7 @@
     var box = document.getElementById('hrBox'); if (!box) return;
     if (window.SKHoro) return window.SKHoro.open(box, HR_API);
     box.style.display = ''; box.innerHTML = '<div class="asg-empty">กำลังเปิดดวงของฉันวันนี้…</div>';
-    var s = document.createElement('script'); s.src = 'horo.js?v=3'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'horo.js?v=4'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
   }
   document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-hr-open]'); if (el) { ev.preventDefault(); hrOpen(); } });
   // ✨ ไอคอน 3 มิติ (Fluent Emoji · Microsoft, MIT) + ธีมสดใสหน้าแรก
@@ -1281,7 +1281,10 @@
       '@media(max-width:700px){.mw-grid,.mw-big{grid-template-columns:1fr}}' +
       '.asg-act{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:14px}.asg-act:last-of-type{border:0}.asg-ad{flex:0 0 74px;font-weight:700;color:#0891B2;font-size:13px}.asg-act small{color:#6B7280}' +
       '.asg-tv .asg-act small{color:var(--mu,#6B7280)}.asg-tv .asg-s{color:var(--mu,#6B7280)}' +
-      '@media(max-width:560px){.asg-stats{grid-template-columns:1fr 1fr}.asg-pp>div{grid-template-columns:1fr auto}.asg-pp>div>span:nth-child(2){grid-row:2}}';
+      '@media(max-width:560px){.asg-stats{grid-template-columns:1fr 1fr}.asg-pp>div{grid-template-columns:1fr auto}.asg-pp>div>span:nth-child(2){grid-row:2}}' +
+      /* v38: กันล้นจอมือถือ (iPhone ขยายทั้งหน้าเมื่อมีชิ้นใดกว้างเกินจอ) + โหมดมืด: ตัวอักษรปุ่มขาวบนพื้นขาว */
+      'html,body{max-width:100%;overflow-x:clip}#asgBox{box-sizing:border-box;overflow-wrap:anywhere;min-width:0}#asgBox .asg-card,#asgBox .asg-pp>div>*,#asgBox .asg-tools>*,#asgBox .asg-row>*{min-width:0}#asgBox img,#asgBox input,#asgBox textarea,#asgBox select{max-width:100%;box-sizing:border-box}#asgBox .asg-tools .asg-btn{white-space:normal}' +
+      '.asg-btn{color:#1F2937}.asg-btn.ok,.asg-btn.del,.asg-btn.tr{color:#fff}.asg-head button{color:#374151}#asgBox input,#asgBox textarea,#asgBox select{color:#111827;background:#fff}';
     document.head.appendChild(css);
     var links = document.querySelector('.sks-links'), anchor = document.getElementById('asgBox');
     mwMenu(links); adminLink();
