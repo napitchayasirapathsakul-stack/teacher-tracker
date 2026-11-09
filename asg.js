@@ -442,21 +442,32 @@
 
   // ---------- 🔗🖼️ ลิงก์และรูปประกอบงานมอบหมาย (เก็บต่อท้ายรายละเอียด: บรรทัด "🔗 ..." / "🖼️ ...") ----------
   function amSplit(m) {
-    var t = [], L = [], I = [];
+    var t = [], L = [], I = [], C = null;
     String(m || '').split('\n').forEach(function (ln) {
       var a = ln.trim(), k;
-      if (a.indexOf('🔗 ') === 0 && /^https?:\/\/\S+$/.test(a.slice(3).trim())) L.push(a.slice(3).trim());
+      if (a.indexOf('📅 ') === 0 && (k = a.match(/^📅 (\d{4}-\d{2}-\d{2}) (.+)$/))) C = { date: k[1], title: k[2] };
+      else if (a.indexOf('🔗 ') === 0 && /^https?:\/\/\S+$/.test(a.slice(3).trim())) L.push(a.slice(3).trim());
       else if (a.indexOf('🖼️ ') === 0 && (k = a.match(/\/d\/([\w-]{20,})/))) I.push(k[1]);
       else t.push(ln);
     });
-    return { t: t.join('\n').replace(/\s+$/, ''), L: L, I: I };
+    return { t: t.join('\n').replace(/\s+$/, ''), L: L, I: I, C: C };
   }
-  function amJoin(t, L, I) {
-    return [String(t || '').replace(/\s+$/, '')].concat(L.map(function (u) { return '🔗 ' + u; }), I.map(function (id) { return '🖼️ https://drive.google.com/file/d/' + id + '/view'; })).filter(Boolean).join('\n');
+  function amJoin(t, L, I, C) {
+    return [String(t || '').replace(/\s+$/, '')].concat(L.map(function (u) { return '🔗 ' + u; }), I.map(function (id) { return '🖼️ https://drive.google.com/file/d/' + id + '/view'; }), C ? ['📅 ' + C.date + ' ' + C.title] : []).filter(Boolean).join('\n');
+  }
+  // 📅 รายการปฏิทินให้เลือกเชื่อมกับงานมอบหมาย (ปฏิทินงานโรงเรียน + กิจกรรมออนไลน์ ตั้งแต่วันนี้)
+  function amCalOpts() {
+    var td = today(), seen = {}, L = [];
+    (UP.items || []).concat(S.acts && S.acts.items ? S.acts.items : []).forEach(function (x) {
+      if (!x || !x.date || !x.title || x.date < td) return; var t = String(x.title).trim(), k = x.date + '|' + t; if (seen[k]) return; seen[k] = 1;
+      L.push({ date: x.date, title: t, time: x.time || '' });
+    });
+    return L.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); }).slice(0, 80);
   }
   function amLinkify(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>'; }); }
   function amHtml(m) {
     var x = amSplit(m), h = x.t ? '<div class="asg-m am-t">' + amLinkify(x.t) + '</div>' : '';
+    if (x.C) h += '<div class="asg-s">📅 ปฏิทิน: ' + esc(th(x.C.date) + ' · ' + x.C.title) + '</div>';
     if (x.L.length) h += '<div class="am-ls">' + x.L.map(function (u) { return '<a class="am-l" href="' + esc(u) + '" target="_blank" rel="noopener">🔗 เปิดลิงก์</a>'; }).join('') + '</div>';
     if (x.I.length) h += '<div class="am-is">' + x.I.map(function (id) { return '<a href="https://drive.google.com/file/d/' + id + '/view" target="_blank" rel="noopener"><img loading="lazy" src="https://drive.google.com/thumbnail?id=' + id + '&sz=w600" alt="รูปประกอบ"></a>'; }).join('') + '</div>';
     return h;
@@ -465,6 +476,10 @@
   document.addEventListener('change', function (ev) {
     var t = ev.target; if (!t || !S.form) return;
     if (t.classList && t.classList.contains('amKeep')) { S.form.keep = [].filter.call(document.querySelectorAll('.amKeep'), function (c) { return c.checked; }).map(function (c) { return c.value; }); return; }
+    if (t.id === 'asgC') {
+      var o = (S.form.co || [])[Number(t.value)] || null; S.form.c = o; if (!o) return;
+      var n = document.getElementById('asgN'), u = document.getElementById('asgU'); if (n) n.value = o.title; if (u) u.value = o.date; return;
+    }
     if (t.id !== 'asgI') return;
     var fs = [].slice.call(t.files || []), room = 3 - (S.form.keep || []).length - (S.form.ni || []).length;
     if (fs.length > room) { toast('แนบรูปได้รวมไม่เกิน 3 รูปต่องาน'); fs = fs.slice(0, Math.max(0, room)); }
@@ -485,6 +500,12 @@
     if (f) {
       h += '<div class="asg-card asg-form"><b>' + (f.id ? '✏️ แก้ไขงาน' : '＋ มอบหมายงาน') + '</b>' +
         '<div class="asg-row"><label class="asg-f">วันที่มอบหมาย<input type="date" id="asgD" value="' + esc(f.d) + '"></label><label class="asg-f">กำหนดส่ง *<input type="date" id="asgU" value="' + esc(f.u) + '"></label></div>' +
+        (function () {
+          var co = amCalOpts(); if (f.c && !co.some(function (o) { return o.date === f.c.date && o.title === f.c.title; })) co.unshift(f.c); f.co = co;
+          return '<label class="asg-f" style="background:#E0F2FE;color:#075985;border-radius:8px;padding:8px">📅 เชื่อมกับกิจกรรมในปฏิทิน (ถ้ามี)<select id="asgC" style="width:100%;max-width:100%;color:#111;background:#fff"><option value="">— ไม่เชื่อม (งานทั่วไป) —</option>' +
+            co.map(function (o, i) { return '<option value="' + i + '"' + (f.c && o.date === f.c.date && o.title === f.c.title ? ' selected' : '') + '>' + esc(th(o.date) + ' · ' + o.title + (o.time ? ' · ' + o.time : '')) + '</option>'; }).join('') +
+            '</select><small style="display:block;margin-top:4px">เลือกแล้ว ระบบเติมเรื่องและกำหนดส่งให้ · หน้าแรกจะขึ้นเป็นรายการเดียวกับปฏิทิน</small></label>';
+        })() +
         '<label class="asg-f">เรื่อง *<input id="asgN" maxlength="200" value="' + esc(f.n) + '"></label>' +
         '<label class="asg-f">รายละเอียด<textarea id="asgM" rows="3" maxlength="1500">' + esc(amSplit(f.m).t) + '</textarea></label>' +
         '<label class="asg-f">🔗 ลิงก์ (ถ้ามี เช่น ฟอร์มให้ครูกรอก หนังสือราชการ)<input id="asgL" type="url" inputmode="url" maxlength="400" placeholder="https://..." value="' + esc(f.l) + '"></label>' +
@@ -529,13 +550,13 @@
       if (navigator.clipboard) navigator.clipboard.writeText(lk).then(ok, function () { window.prompt('คัดลอกลิงก์นี้', lk); }); else window.prompt('คัดลอกลิงก์นี้', lk);
       return;
     }
-    if (a === 'newfor') { S.tab = 'adm'; S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], a: [decodeURIComponent(p.slice(1).join(':'))] }; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (a === 'newfor') { S.tab = 'adm'; S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], c: null, a: [decodeURIComponent(p.slice(1).join(':'))] }; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'openadm') { S.open = true; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); load().catch(function () {}); return; }
     if (a === 'pick') { [].forEach.call(document.querySelectorAll('[name=asgA]'), function (c) { c.checked = p[1] === '1' || (p[1] === 't' && S.teachers.indexOf(c.value) >= 0); }); return; }
     if (a === 'pickg') { var gg = decodeURIComponent(p.slice(1).join(':')), bx = [].filter.call(document.querySelectorAll('[name=asgA]'), function (c) { return c.getAttribute('data-g') === gg; }), on = bx.some(function (c) { return !c.checked; }); bx.forEach(function (c) { c.checked = on; }); return; }
-    if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], a: [] }; return render(); }
+    if (a === 'new') { S.form = { id: '', d: today(), u: '', n: '', m: '', l: '', I: [], keep: [], ni: [], c: null, a: [] }; return render(); }
     if (a === 'cancel') { S.form = null; return render(); }
-    if (a === 'edit') { var x = S.G.filter(function (q) { return q.id === p[1]; })[0]; var xs = amSplit(x.m); S.form = { id: x.id, d: x.d, u: x.u, n: x.n, m: x.m, l: xs.L[0] || '', I: xs.I, keep: xs.I.slice(), ni: [], a: x.a.slice() }; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
+    if (a === 'edit') { var x = S.G.filter(function (q) { return q.id === p[1]; })[0]; var xs = amSplit(x.m); S.form = { id: x.id, d: x.d, u: x.u, n: x.n, m: x.m, l: xs.L[0] || '', I: xs.I, keep: xs.I.slice(), ni: [], c: xs.C, a: x.a.slice() }; S.tab = 'adm'; render(); document.getElementById('asgBox').scrollIntoView({ behavior: 'smooth' }); return; }
     if (a === 'logout') { S.pw = ''; sput('asg_pw', ''); S.form = null; try { renderUp(); } catch (e) {} return render(); }
     if (S.busy) return;
     var job = null;
@@ -559,7 +580,7 @@
         if (!j.ok) throw new Error(j.err === 'auth' ? 'รหัสผ่านผู้บริหารไม่ถูกต้องหรือหมดเวลา กรุณาเข้าสู่ระบบใหม่' : 'อัปโหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง'); return j.ids || []; }) : Promise.resolve([]);
       toast('⏳ กำลังบันทึก…');
       job = up.then(function (ids) {
-        e.m = amJoin(e.m, lk ? [lk] : [], (ff.keep || []).concat(ids));
+        e.m = amJoin(e.m, lk ? [lk] : [], (ff.keep || []).concat(ids), ff.c);
         if (e.m.length > 2000) throw new Error('รายละเอียดยาวเกินไป');
         return post({ a: 'asgsave', pw: S.pw, id: ff.id || undefined, e: e });
       }).then(function () { S.form = null; toast('บันทึกการมอบหมายงานแล้ว'); });
@@ -888,8 +909,8 @@
     var el = document.getElementById('upBan'); bdDraw(); ctBan(); if (!el || UP.items === null) return;
     var td = today(), L = UP.items.slice();
     S.G.forEach(function (x) {
-      var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }); if (!open.length || x.u < td) return;
-      L.push({ src: 'asg', date: x.u, time: '', title: x.n, who: open.length === x.a.length ? x.a.length + ' คน' : 'ค้าง ' + open.length + '/' + x.a.length + ' คน', place: '', id: x.id });
+      var open = x.a.filter(function (z) { return !(x.st[z] || {}).d; }), C = amSplit(x.m).C; if (!open.length || (C ? C.date : x.u) < td) return;
+      L.push({ src: 'asg', date: C ? C.date : x.u, time: '', title: C ? C.title : x.n, who: open.length === x.a.length ? x.a.length + ' คน' : 'ค้าง ' + open.length + '/' + x.a.length + ' คน', place: '', id: x.id });
     });
     L = L.filter(function (x) { return x.date >= td || (x.end && x.end >= td); }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
     var lim = Date.parse(td + 'T00:00:00Z') + 14 * 864e5; L = L.filter(function (x) { return Date.parse(x.date + 'T00:00:00Z') <= lim || x.date < td; });
@@ -903,7 +924,7 @@
       var nx = nzT(x.title), y = keep.filter(function (k) { return k.date === x.date && sim(nzT(k.title), nx); })[0];
       if (!y) { keep.push(Object.assign({}, x)); return; }
       if (!y.time && x.time) y.time = x.time; if (!y.place && x.place) y.place = x.place; if (!y.who && x.who) y.who = x.who;
-      if (x.src === 'asg') y.asgId = x.id;
+      if (x.src === 'asg') { y.asgId = x.id; if (y.src !== 'asg') y.asgW = x.who; }
     });
     L = keep.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time < b.time ? -1 : 1); });
     UP._L = {}; L.forEach(function (x) { x._k = evk(x); x._ev = EV.M ? EV.M[x._k] || null : null; UP._L[x._k] = x; });
@@ -915,9 +936,9 @@
     var f = L[0], fd = dt(f), rest = L.slice(1, UP.more ? 30 : 7);
     var h = '<div class="up-wrap"><div class="up-head"><div><b>⏰ งานที่ใกล้จะถึง</b><small>อีก 14 วันข้างหน้า · ' + L.length + ' รายการ</small></div><div class="up-legend"><span style="background:#0E7490">ปฏิทินงานโรงเรียน</span><span style="background:#B91C1C">กำหนดส่งงาน</span></div></div>' +
       '<div class="up-body"><a class="up-next ' + lvl(f) + '"' + go(f) + '><div class="up-cd">' + esc(dd(f)) + '</div><div class="up-nt">' + esc(f.title) + '</div>' +
-      '<div class="up-nm">' + esc('วัน' + fd.w + 'ที่ ' + fd.d + ' ' + fd.m) + (f.time ? ' · ' + esc(f.time) + ' น.' : '') + (f.place ? ' · 📍 ' + esc(f.place) : '') + '</div>' + (f.who ? '<div class="up-nm">👥 ' + esc(f.who) + '</div>' : '') +
+      '<div class="up-nm">' + esc('วัน' + fd.w + 'ที่ ' + fd.d + ' ' + fd.m) + (f.time ? ' · ' + esc(f.time) + ' น.' : '') + (f.place ? ' · 📍 ' + esc(f.place) : '') + '</div>' + (f.who ? '<div class="up-nm">👥 ' + esc(f.who) + '</div>' : '') + (f.asgW ? '<div class="up-nm">📌 มีงานมอบหมาย · ' + esc(f.asgW) + '</div>' : '') +
       '<span class="up-tag" style="background:rgba(255,255,255,.25)">' + TAG[f.src][0] + '</span>' + evBtn(f) + evChip(f) + '</a><div class="up-list">' +
-      rest.map(function (x) { var d = dt(x); return '<a class="up-it' + (x._ev ? ' up-done' : '') + '"' + go(x) + '><span class="up-date ' + lvl(x) + '"><b>' + d.d + '</b>' + d.m + '</span><span class="up-tx"><b>' + esc(x.title) + '</b><small><i style="background:' + TAG[x.src][1] + '"></i>' + esc(dd(x)) + (x.time ? ' · ' + esc(x.time) : '') + (x.who ? ' · ' + esc(x.who) : '') + '</small>' + evChip(x) + '</span>' + evBtn(x) + '</a>'; }).join('') +
+      rest.map(function (x) { var d = dt(x); return '<a class="up-it' + (x._ev ? ' up-done' : '') + '"' + go(x) + '><span class="up-date ' + lvl(x) + '"><b>' + d.d + '</b>' + d.m + '</span><span class="up-tx"><b>' + esc(x.title) + '</b><small><i style="background:' + TAG[x.src][1] + '"></i>' + esc(dd(x)) + (x.time ? ' · ' + esc(x.time) : '') + (x.who ? ' · ' + esc(x.who) : '') + (x.asgW ? ' · 📌 มอบหมาย ' + esc(x.asgW) : '') + '</small>' + evChip(x) + '</span>' + evBtn(x) + '</a>'; }).join('') +
       (L.length > 7 ? '<a class="up-more" href="#" data-up="more">' + (UP.more ? 'ย่อ ▲' : 'ดูทั้งหมด ' + L.length + ' รายการ ▼') + '</a>' : '') + '</div></div></div>';
     el.innerHTML = h;
   }
