@@ -174,7 +174,11 @@
       '<label class="asg-f">ประเภท<select id="fbK"><option>ปัญหา</option><option>ข้อเสนอแนะ</option></select></label>' +
       '<label class="asg-f">เกิดที่เมนู/หน้าไหน<input id="fbP" maxlength="60" placeholder="เช่น ตารางสอน, มอบหมายงาน"></label>' +
       '<label class="asg-f">รายละเอียด<textarea id="fbX" rows="4" maxlength="1500" placeholder="เล่าสั้น ๆ ว่าเกิดอะไรขึ้น หรืออยากให้ปรับอะไร"></textarea></label>' +
-      '<div class="asg-s">ผู้ส่ง: ' + esc(who() || 'ไม่ระบุชื่อ (เลือกชื่อได้ที่ 📌 มอบหมายงาน)') + '</div>' +
+      (function () {
+        var me = who(), L = []; try { L = pnames(); } catch (e) {} if (me && L.indexOf(me) < 0) L = [me].concat(L);
+        return '<label class="asg-f">ผู้แจ้ง<select id="fbN"><option value="">🙈 ไม่ประสงค์ออกนาม</option>' +
+          L.map(function (n) { return '<option value="' + esc(n) + '"' + (n === me ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>';
+      })() +
       '<button class="asg-btn ok tr-go" data-fb="go">📤 ส่ง</button></div>';
     w.style.display = 'flex';
   }
@@ -187,7 +191,7 @@
     if (a === 'go') {
       var x = (document.getElementById('fbX').value || '').trim(); if (x.length < 3) return toast('กรุณาพิมพ์รายละเอียด');
       el.disabled = true; el.textContent = '⏳ กำลังส่ง…';
-      fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'fb', n: who(), k: document.getElementById('fbK').value, pg: document.getElementById('fbP').value, x: x }) })
+      fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'fb', n: (document.getElementById('fbN') || {}).value || 'ไม่ประสงค์ออกนาม', k: document.getElementById('fbK').value, pg: document.getElementById('fbP').value, x: x }) })
         .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.err || 'ส่งไม่สำเร็จ'); w.style.display = 'none'; toast('✅ ส่งถึงผู้ดูแลระบบแล้ว ขอบคุณค่ะ'); })
         .catch(function (e) { el.disabled = false; el.textContent = '📤 ส่ง'; toast('ส่งไม่สำเร็จ: ' + (e.message || e)); });
     }
@@ -606,7 +610,7 @@
     } else if (old) old.parentNode.removeChild(old);
     else if (!force && box.getAttribute('data-n') === nm) return;
     box.setAttribute('data-n', nm);
-    if (nm !== S.me && pnames().indexOf(nm) >= 0) { S.me = nm; put('asg_me', nm); badge(); }
+    if (!S.me && !S.pw && pnames().indexOf(nm) >= 0) { S.me = nm; put('asg_me', nm); badge(); } // ตั้งชื่อให้เฉพาะเครื่องที่ยังไม่เคยเลือกชื่อ และไม่ใช่ผู้บริหารที่เปิดดูหน้าครูคนอื่น
     var mine = S.G.filter(function (x) { return x.a.indexOf(nm) >= 0; }).map(function (x) { x._st = state(x, nm); return x; });
     var order = { late: 0, soon: 1, open: 2, done: 3 };
     mine.sort(function (a, b) { return order[a._st] - order[b._st] || (a.u < b.u ? -1 : 1); });
