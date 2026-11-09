@@ -849,7 +849,18 @@
     else if (PN.err) h += '<div class="asg-s" style="color:#B91C1C">' + esc(PN.err) + '</div>';
     else h += '<div class="db-stack">' + (names.length ? '<i style="width:' + (nOn * 100 / names.length) + '%;background:#7C3AED"></i>' : '') + '</div><div class="db-nt"><div class="db-on"><b>🔔 เปิดแล้ว (' + nOn + ')</b>' + (on.join('<br>') || '-') + '</div><div class="db-off"><b>🔕 ยังไม่เปิด (' + off.length + ')</b>' + (off.join('<br>') || '-') + '</div></div>' +
       (PN.anon ? '<div class="db-note">มีอีก ' + PN.anon + ' เครื่องที่เปิดไว้ก่อนมีระบบชื่อ → ครั้งหน้าที่เครื่องนั้นเปิดแอป ระบบจะถามชื่อ 1 ครั้ง</div>' : '');
-    return h + '</div>';
+    h += '</div>';
+    // 📋 ข้อความตามงานสำเร็จรูป (วางในกลุ่มไลน์ครูครั้งเดียว แทนการทักทีละคน)
+    var td = today(), RM = [];
+    S.G.filter(function (x) { return x.u >= td; }).sort(function (a, b) { return a.u < b.u ? -1 : 1; }).forEach(function (x) {
+      var w = x.a.filter(function (n) { return !(x.st[n] || {}).k && state(x, n) !== 'done'; }); if (w.length) RM.push('📌 ' + x.n + ' (กำหนด ' + th(x.u) + ')\n   ยังไม่กดรับทราบ: ' + w.join(', '));
+    });
+    var offN = PN && PN.L ? names.filter(function (n) { return !PN.L.some(function (z) { return z.n === n; }); }) : [];
+    var app = location.href.split('#')[0].split('?')[0];
+    var txt = (RM.length ? '🙏 รบกวนคุณครูกดรับทราบงานในแอปค่ะ\n' + RM.join('\n') + '\n' : '') + (offN.length ? '\n🔕 ยังไม่เปิดการแจ้งเตือน: ' + offN.join(', ') + '\nเปิดแอป แล้วกดปุ่ม "🔔 เปิดการแจ้งเตือน" ด้านบน (iPhone: กดแชร์ → เพิ่มไปยังหน้าจอโฮม ก่อน)\n' : '') + ((RM.length || offN.length) ? '\n👉 ' + app : '');
+    MW.rmTxt = txt;
+    h += '<div class="db-card"><h4>📋 ข้อความตามงาน (วางในกลุ่มไลน์ครูครั้งเดียว)</h4>' + (txt ? '<textarea id="rmTxt" rows="7" readonly style="width:100%;max-width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:8px;border:1px solid #CBD5E1;border-radius:8px;background:#F8FAFC;color:#111">' + esc(txt) + '</textarea><button class="asg-btn ok" style="width:100%;margin-top:6px;color:#fff" data-mw="copyrm">📋 คัดลอกข้อความ</button><div class="db-note">กดคัดลอก → เปิดกลุ่มไลน์ครู → กดค้างที่ช่องพิมพ์ → วาง</div>' : '<div class="asg-s">ทุกคนกดรับทราบงานและเปิดแจ้งเตือนครบแล้ว 🎉 ไม่ต้องตามใคร</div>') + '</div>';
+    return h;
   }
   function pnLoad() {
     if (MW.pnBusy) return; MW.pnBusy = true;
@@ -871,6 +882,10 @@
     var p = el.getAttribute('data-mw').split(':'), a = p[0];
     if (a === 'open') return mwOpen(p[1]);
     if (a === 'close') { MW.open = false; return mwRender(); }
+    if (a === 'copyrm') {
+      var t = MW.rmTxt || '', ok = function () { toast('✅ คัดลอกแล้ว นำไปวางในกลุ่มไลน์ได้เลย'); }, fb = function () { var ta = document.getElementById('rmTxt'); if (ta) { ta.removeAttribute('readonly'); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('กดค้างที่ข้อความแล้วเลือก คัดลอก'); } ta.setAttribute('readonly', ''); } };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, fb); else fb(); return;
+    }
     if (a === 'mon') { MW.mon = !MW.mon; if (MW.mon && !S.night) { try { nightLoad().then(mwRender); } catch (e) {} } return mwRender(); }
     if (a === 'view') { MW.view = p[1]; MW.mon = false; return mwRender(); }
     if (a === 'me') { S.me = decodeURIComponent(p.slice(1).join(':')); put('asg_me', S.me); badge(); MW.view = 'me'; mwRender(); document.getElementById('mwBox').scrollIntoView({ behavior: 'smooth' }); return; }
@@ -922,10 +937,10 @@
     var TAG = { event: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], act: ['📅 ปฏิทินงานโรงเรียน', '#0E7490'], asg: ['📌 กำหนดส่งงาน', '#B91C1C'] };
     // ไม่ให้ขึ้นซ้ำ: วันเดียวกัน + ชื่อคล้ายกัน (ข้อความตรงกันต่อเนื่อง ≥ 10 ตัวอักษร) → เหลือรายการเดียว (ปฏิทินปฏิบัติงาน > ปฏิทินที่เพิ่มเอง > งานมอบหมาย)
     var PRI = { event: 0, act: 1, asg: 2 }, nzT = function (t) { return String(t || '').replace(/[\s.()\-–]/g, ''); };
-    var sim = function (a, b) { if (a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true; var m = 0, p = []; for (var j = 0; j <= b.length; j++) p[j] = 0; for (var i = 1; i <= a.length; i++) { var prev = 0; for (j = 1; j <= b.length; j++) { var t = p[j]; p[j] = a[i - 1] === b[j - 1] ? prev + 1 : 0; if (p[j] > m) m = p[j]; prev = t; } } return m >= 10; };
+    var sim = function (a, b) { if (a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true; var m = 0, p = []; for (var j = 0; j <= b.length; j++) p[j] = 0; for (var i = 1; i <= a.length; i++) { var prev = 0; for (j = 1; j <= b.length; j++) { var t = p[j]; p[j] = a[i - 1] === b[j - 1] ? prev + 1 : 0; if (p[j] > m) m = p[j]; prev = t; } } return m >= 10 && m >= Math.min(a.length, b.length) * 0.6; };
     L = L.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : PRI[a.src] - PRI[b.src]; });
     var keep = []; L.forEach(function (x) {
-      var nx = nzT(x.title), y = keep.filter(function (k) { return k.date === x.date && sim(nzT(k.title), nx); })[0];
+      var nx = nzT(x.title), y = keep.filter(function (k) { return k.date === x.date && k.src !== x.src && !(k.time && x.time && nzT(k.time) !== nzT(x.time)) && sim(nzT(k.title), nx); })[0];
       if (!y) { keep.push(Object.assign({}, x)); return; }
       if (!y.time && x.time) y.time = x.time; if (!y.place && x.place) y.place = x.place; if (!y.who && x.who) y.who = x.who;
       if (x.src === 'asg') { y.asgId = x.id; if (y.src !== 'asg') y.asgW = x.who; }
