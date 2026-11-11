@@ -1065,9 +1065,16 @@
     var s = document.createElement('script'); s.src = 'onet.js?v=1'; s.onload = function () { window.SKOnet.open(); }; s.onerror = function () { toast('เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช'); }; document.head.appendChild(s);
   }
   document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-on-open]'); if (el) { ev.preventDefault(); onOpen(); } });
+  // 📝 ประเมินครูผู้ช่วย (โหลดไฟล์ pmt.js เมื่อกดเท่านั้น)
+  function pmOpen() {
+    if (window.SKPmt) return window.SKPmt.open();
+    toast('กำลังเปิดประเมินครูผู้ช่วย…');
+    var s = document.createElement('script'); s.src = 'pmt.js?v=1'; s.onload = function () { window.SKPmt.open(); }; s.onerror = function () { toast('เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช'); }; document.head.appendChild(s);
+  }
+  document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-pmt-open]'); if (el) { ev.preventDefault(); pmOpen(); } });
   // ✨ ไอคอน 3 มิติ (Fluent Emoji · Microsoft, MIT) + ธีมสดใสหน้าแรก
   var I3D = 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/';
-  var I3M = { '👩‍🏫': 'Woman teacher/Default/3D/woman_teacher_3d_default.png', '📊': 'Bar chart/3D/bar_chart_3d.png', '🔮': 'Crystal ball/3D/crystal_ball_3d.png', '📅': 'Calendar/3D/calendar_3d.png', '🗓': 'Spiral calendar/3D/spiral_calendar_3d.png', '📢': 'Loudspeaker/3D/loudspeaker_3d.png', '📘': 'Blue book/3D/blue_book_3d.png', '🎓': 'Graduation cap/3D/graduation_cap_3d.png', '🏆': 'Trophy/3D/trophy_3d.png', '📁': 'File folder/3D/file_folder_3d.png', '📌': 'Pushpin/3D/pushpin_3d.png', '👥': 'Busts in silhouette/3D/busts_in_silhouette_3d.png', '📣': 'Megaphone/3D/megaphone_3d.png', '🏛️': 'Classical building/3D/classical_building_3d.png', '👤': 'Bust in silhouette/3D/bust_in_silhouette_3d.png', '📂': 'Open file folder/3D/open_file_folder_3d.png', '⏰': 'Alarm clock/3D/alarm_clock_3d.png', '📤': 'Outbox tray/3D/outbox_tray_3d.png', '🏫': 'School/3D/school_3d.png', '🔗': 'Link/3D/link_3d.png', '🎯': 'Direct hit/3D/direct_hit_3d.png' };
+  var I3M = { '👩‍🏫': 'Woman teacher/Default/3D/woman_teacher_3d_default.png', '📊': 'Bar chart/3D/bar_chart_3d.png', '🔮': 'Crystal ball/3D/crystal_ball_3d.png', '📅': 'Calendar/3D/calendar_3d.png', '🗓': 'Spiral calendar/3D/spiral_calendar_3d.png', '📢': 'Loudspeaker/3D/loudspeaker_3d.png', '📘': 'Blue book/3D/blue_book_3d.png', '🎓': 'Graduation cap/3D/graduation_cap_3d.png', '🏆': 'Trophy/3D/trophy_3d.png', '📁': 'File folder/3D/file_folder_3d.png', '📌': 'Pushpin/3D/pushpin_3d.png', '👥': 'Busts in silhouette/3D/busts_in_silhouette_3d.png', '📣': 'Megaphone/3D/megaphone_3d.png', '🏛️': 'Classical building/3D/classical_building_3d.png', '👤': 'Bust in silhouette/3D/bust_in_silhouette_3d.png', '📂': 'Open file folder/3D/open_file_folder_3d.png', '⏰': 'Alarm clock/3D/alarm_clock_3d.png', '📤': 'Outbox tray/3D/outbox_tray_3d.png', '🏫': 'School/3D/school_3d.png', '🔗': 'Link/3D/link_3d.png', '🎯': 'Direct hit/3D/direct_hit_3d.png', '📝': 'Memo/3D/memo_3d.png' };
   function i3d(e, cls) { var p = I3M[e]; return p ? '<img class="' + cls + '" src="' + I3D + encodeURI(p) + '" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode(\'' + e + '\'))">' : e; }
   function fx3d() {
     var m = document.getElementById('mwMenu'); if (!m) return;
@@ -1216,7 +1223,7 @@
       '<div class="h">📤 ส่งงาน</div><div class="g">' + A(TT + '?page=plans', '📘', 'ส่งแผนการสอน') + A(TT + '?page=training', '🎓', 'รายงานการอบรม') + A(TT + '?page=awards', '🏆', 'รางวัล/เกียรติบัตร', ' target="_top" data-sec="awards"') +
       A('#', '📁', 'โครงการ/กิจกรรม', ' data-mw="proj"') + '<a href="#" data-asg="open" data-sec="asg"><span>📌</span>มอบหมายงาน<em id="asgNb" style="display:none"></em></a></div>' +
       '<div class="h">🏫 ข้อมูลโรงเรียน</div><div class="g">' + A(TT + '?page=news', '📢', 'ประกาศข่าวสาร', ' target="_top" data-sec="news"') + A(TT + '?page=acts', '📅', 'ปฏิทินงานโรงเรียน', ' target="_top" data-sec="acts"') + A(TT + '?page=groups', '👥', 'กลุ่มกิจกรรม/ผู้รับเช็ค') + A(TT + '?page=prduty', '📣', 'เวรสื่อประชาสัมพันธ์') +
-      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร', ' target="_top" data-sec="docs"') + '</div>' +
+      A(TT + '?page=org', '🏛️', 'โครงสร้างการบริหาร') + A(TT + '?page=staff', '👤', 'ข้อมูลบุคลากร') + '<a href="#" data-pmt-open="1"><span>📝</span>ประเมินครูผู้ช่วย</a>' + A(TT + '?page=docs', '📂', 'ดาวน์โหลดเอกสาร', ' target="_top" data-sec="docs"') + '</div>' +
       '<div id="mwLinks"></div></div>';
     var old = links.querySelector('.g'), hh = links.querySelector('.h');
     if (old) old.style.display = 'none'; if (hh) hh.style.display = 'none';
