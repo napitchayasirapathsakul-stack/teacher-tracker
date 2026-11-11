@@ -181,6 +181,15 @@
       })() +
       '<button class="asg-btn ok tr-go" data-fb="go">📤 ส่ง</button></div>';
     w.style.display = 'flex';
+    // รายชื่อยังไม่โหลด (เปิดฟอร์มก่อนเมนูอื่น) → โหลดแล้วเติมรายชื่อทั้งหมด โดยคงค่าที่เลือกไว้
+    if (!S.loaded || pnames().length < 2) {
+      var sel = document.getElementById('fbN'); if (sel) sel.insertAdjacentHTML('beforeend', '<option disabled data-fbw="1">⏳ กำลังโหลดรายชื่อ…</option>');
+      (S.loaded ? Promise.resolve() : load()).catch(function () {}).then(function () {
+        var e = document.getElementById('fbN'); if (!e) return;
+        var cur = e.value, me = who(), L = []; try { L = pnames(); } catch (x) {} if (me && L.indexOf(me) < 0) L = [me].concat(L);
+        e.innerHTML = '<option value="">🙈 ไม่ประสงค์ออกนาม</option>' + L.map(function (n) { return '<option value="' + esc(n) + '"' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+      });
+    }
   }
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest('[data-fb]'), w = document.getElementById('fbBox');
