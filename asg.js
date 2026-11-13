@@ -1314,7 +1314,7 @@
     var asg = Ls.some(function (s) { return s.k === 'asg'; });
     return '📢 อัปเดตใหม่วันนี้ · ' + dlDay(d.today, 1) + '\n' + Ls.map(function (s) {
       return '\n' + s.ic + ' ' + s.h + '\n' + s.L.map(function (t) { return '• ' + t; }).join('\n') + (s.note ? '\nข้อมูล ณ ' + dlNow() + ' น. อาจเปลี่ยนแปลงตอนเช้า ดูล่าสุดในแอป' : '');
-    }).join('\n') + '\n\n👉 ' + (asg ? 'เปิดดูรายละเอียดและกดรับทราบในแอป' : 'เปิดดูรายละเอียดในแอป') + '\n' + dlLink();
+    }).join('\n') + '\n\n' + (asg ? '👉 วิธีรับทราบงาน: กดลิงก์ด้านล่าง → เลือกชื่อของตนเอง (ครั้งแรกครั้งเดียว) → กด 👍 รับทราบ ที่งานของตนเองทุกงาน' : '👉 เปิดดูรายละเอียดในแอป') + '\n' + dlLink();
   }
   // การ์ดหน้าแรก: บรรทัดละเรื่อง · แตะเพื่อดูรายการ · งานมอบหมายกดไปหน้ารับทราบ
   function dlRender() {
@@ -1501,7 +1501,9 @@
     bdLoad(); logU('เปิดแอป'); ctLoad(); evLoad();
     (function () { var f = document.createElement('div'); f.className = 'fb-link'; f.innerHTML = '<a href="#" data-fb="open">💬 แจ้งปัญหา / เสนอแนะการใช้งานแอป</a>'; document.body.appendChild(f); })();
     document.addEventListener('click', mwClick); document.addEventListener('change', mwChange);
-    if (/[?&]my\b/.test(location.search) || dlMy) setTimeout(function () { mwOpen('me'); }, 300);
+    if (/[?&]my\b/.test(location.search)) setTimeout(function () { mwOpen('me'); }, 300);
+    // ลิงก์จาก LINE → เปิดหน้า "งานมอบหมายของฉัน" (มีปุ่ม 👍 รับทราบ) ทันที
+    if (dlMy) setTimeout(function () { S.open = true; S.tab = 'me'; render(); var bx = document.getElementById('asgBox'); if (bx) bx.scrollIntoView({ behavior: 'smooth' }); load().catch(function () {}); }, 300);
     if (/[?&#]asg\b/.test(location.href)) S.open = true;
     var mq = location.search.match(/[?&]asg=([^&#]+)/);
     if (mq) { try { var who = decodeURIComponent(mq[1].replace(/\+/g, ' ')); S.me = who; put('asg_me', who); S.tab = 'me'; } catch (e) {} }
