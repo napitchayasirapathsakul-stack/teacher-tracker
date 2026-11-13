@@ -534,7 +534,9 @@
   // ---------- การทำงาน ----------
   function load() {
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
-    var pp = post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; });
+    // รายชื่อผู้รับงาน: ข้อมูลบุคลากรทั้งหมดจากระบบตารางสอน (ผู้บริหาร ครู ลูกจ้าง พี่เลี้ยง จ้างเหมา) · สำรอง = ระบบติดตาม (เฉพาะครู)
+    var pp = fetch(TT + '?api=people').then(function (r) { return r.json(); }).then(function (j) { var L = j.ok ? (Array.isArray(j.data) ? j.data : (j.data && j.data.people) || []) : []; if (!L.length) throw 0; return L; })
+      .catch(function () { return post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; }); });
     var trl = fetch(TT + '?api=trsent').then(function (r) { return r.json(); }).then(function (j) { return (j.data && j.data.L) || []; }, function () { return S.TR || []; });
     return Promise.all([post({ a: 'teachers' }), g, pp, trl]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.TR = r[3]; aug(); S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); try { dlRender(); } catch (e) {} teacherView(true); pushUi(); });
   }
