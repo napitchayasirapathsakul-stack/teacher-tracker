@@ -222,7 +222,7 @@
   }
   // ---------- 📇 ข้อมูลติดต่อส่วนบุคคล (อีเมลส่วนตัว · อีเมล edu · LINE ID) — เก็บในข้อมูลบุคลากร แอดมินเห็นคนเดียว ----------
   var CT = { L: null };
-  function ctLoad() { fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'ctst' }) }).then(function (r) { return r.json(); }).then(function (j) { CT.L = j.L || []; ctBan(); if (S.open && S.tab === 'adm') render(); }, function () {}); }
+  function ctLoad() { fetch(NT, { method: 'POST', body: JSON.stringify({ a: 'ctst' }) }).then(function (r) { return r.json(); }).then(function (j) { CT.L = j.L || []; ctBan(); if (S.open && S.tab === 'adm' && !S.form) render(); }, function () {}); }
   function ctDone(nm) { var n = tnorm(nm), f = (CT.L || []).filter(function (x) { return x.n === n; })[0]; return !f || f.f; }
   function ctBan() {
     var up = document.getElementById('upBan'); if (!up || !CT.L) return;
@@ -485,7 +485,7 @@
     if (x.I.length) h += '<div class="am-is">' + x.I.map(function (id) { return '<a href="https://drive.google.com/file/d/' + id + '/view" target="_blank" rel="noopener"><img loading="lazy" src="https://drive.google.com/thumbnail?id=' + id + '&sz=w600" alt="รูปประกอบ"></a>'; }).join('') + '</div>';
     return h;
   }
-  document.addEventListener('input', function (ev) { if (ev.target && ev.target.id === 'asgL' && S.form) S.form.l = ev.target.value; });
+  document.addEventListener('input', function (ev) { if (ev.target && S.form && {asgL:'l',asgN:'n',asgM:'m',asgD:'d',asgU:'u'}[ev.target.id]) S.form[{asgL:'l',asgN:'n',asgM:'m',asgD:'d',asgU:'u'}[ev.target.id]] = ev.target.value; });
   document.addEventListener('change', function (ev) {
     var t = ev.target; if (!t || !S.form) return;
     if (t.classList && t.classList.contains('amKeep')) { S.form.keep = [].filter.call(document.querySelectorAll('.amKeep'), function (c) { return c.checked; }).map(function (c) { return c.value; }); return; }
