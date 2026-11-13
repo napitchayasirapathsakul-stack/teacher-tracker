@@ -158,7 +158,7 @@
   function dev() { var u = navigator.userAgent; return /iPad|Tablet/i.test(u) ? 'แท็บเล็ต' : /Mobi|Android|iPhone/i.test(u) ? 'มือถือ' : 'คอมพิวเตอร์'; }
   function logU(m) {
     m = String(m || '').replace(/\s+/g, ' ').trim().slice(0, 50); if (!m || LGS[m]) return; LGS[m] = 1;
-    try { fetch(NT, { method: 'POST', mode: 'no-cors', keepalive: true, body: JSON.stringify({ a: 'log', n: who(), m: m, dv: dev() }) }); } catch (e) {}
+    try { fetch(NT, { method: 'POST', mode: 'no-cors', keepalive: true, body: JSON.stringify({ a: 'log', n: who(), m: m, dv: dev(), ch: sget('ch') }) }); } catch (e) {}
   }
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('a,button'); if (!el || el.closest('#trBox,#fbBox,#ctBox,#evBox')) return;
@@ -536,7 +536,7 @@
     var g = post({ a: 'asgall' }).then(function (j) { S.old = false; return j; }, function () { S.old = true; return { G: [] }; });
     var pp = post({ a: 'people' }).then(function (j) { return j.people || []; }, function () { return []; });
     var trl = fetch(TT + '?api=trsent').then(function (r) { return r.json(); }).then(function (j) { return (j.data && j.data.L) || []; }, function () { return S.TR || []; });
-    return Promise.all([post({ a: 'teachers' }), g, pp, trl]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.TR = r[3]; aug(); S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); teacherView(true); pushUi(); });
+    return Promise.all([post({ a: 'teachers' }), g, pp, trl]).then(function (r) { S.teachers = r[0].teachers || []; S.G = r[1].G || []; S.people = r[2]; S.TR = r[3]; aug(); S.loaded = true; if (S.me && pnames().indexOf(S.me) < 0) S.me = ''; render(); renderUp(); nwRender(); try { dlRender(); } catch (e) {} teacherView(true); pushUi(); });
   }
   function click(ev) {
     var el = ev.target.closest('[data-asg]'); if (!el) return;
@@ -1225,7 +1225,7 @@
   function mwMenu(links) {
     if (!links || document.getElementById('mwMenu')) return;
     var A = function (href, ic, tx, extra) { return '<a href="' + href + '"' + (extra || ' target="_top"') + '><span>' + ic + '</span>' + tx + '</a>'; };
-    var html = '<div id="mwMenu"><div id="pushBar"></div><div id="nwBar"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
+    var html = '<div id="mwMenu"><div id="pushBar"></div><div id="nwBar"></div><div id="dlCard"></div><div id="newsBan"></div><div id="upBan"></div><div class="mw-big"><a href="#" data-mw="open:me" class="mw-b1"><span>👩‍🏫</span><div>งานของฉัน<small>เลือกชื่อครั้งเดียว เห็นงานทุกเมนู ส่งแล้ว/ยังไม่ส่ง และส่งงานได้จากที่นี่</small></div></a>' +
       '<a href="#" data-mw="open:all" class="mw-b2"><span>📊</span><div>ภาพรวมงานครู<small>ตารางสรุปทุกคน ใครส่งครบ ใครยังค้าง (ดูได้ทุกคน)</small></div></a>' +
       '<a href="#" data-hr-open="1" class="mw-b3"><span>🔮</span><div>ดวงของฉันวันนี้<small>งานของฉันวันนี้ · ดวงรายวันตามวันเกิด · ไพ่เลอนอร์ม็อง</small></div></a></div>' +
       '<div class="h">📅 ตารางและสอนแทน</div><div class="g">' + A(TT, '📅', 'ตารางสอน') + A(TT + '?page=daily', '🗓', 'ตารางรายวัน') + A(TT + '?page=subtoday', '📢', 'จัดสอนแทนวันนี้', ' target="_top" data-sec="subs"') + '<a href="#" data-on-open="1"><span>🎯</span>ติวเข้ม O-NET ป.6</a></div>' +
@@ -1244,7 +1244,7 @@
       el.innerHTML = '<div class="h">🔗 ลิงก์ที่ใช้บ่อย <a class="adm-edit" href="' + TT + '?page=admin&to=links" target="_top">✏️ แก้ไข (Admin)</a></div><div class="g">' +
         (L.length ? L.map(function (x) { return '<a data-nwk="links" data-nwid="' + esc(x.link_id || '') + '" href="' + esc(x.url) + '" target="_blank" rel="noopener" title="' + esc(x.note || x.title) + '"><span>' + esc(x.icon || '🔗') + '</span>' + esc(x.title) + '</a>'; }).join('') : '<span class="asg-s">ยังไม่มีลิงก์</span>') + '</div>';
     }).catch(function () {});
-    loadUp(); nwLoad(); setTimeout(tkLoad, 300);
+    loadUp(); nwLoad(); dlLoad(); setTimeout(tkLoad, 300);
     setInterval(function () { var t = tkTerm(); if (t && t !== TKS.term && !tkLoad.busy) { tkLoad.busy = 1; tkLoad().then(function () { tkLoad.busy = 0; }, function () { tkLoad.busy = 0; }); } }, 1500); // ภาคเรียนเปลี่ยน → โหลดชื่อหัวข้องานให้ตรง
     document.addEventListener('change', function (ev) { if (ev.target.id === 'term') setTimeout(tkLoad, 50); });
     setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('tkBox') && TKS.list) tkRender(); }, 1500); setupAutoRefresh(); fxInit();
@@ -1260,8 +1260,116 @@
     setInterval(function () { var ad = document.getElementById('admin'); if (cand && ad && !ad.hidden) { S.pw = cand; sput('asg_pw', cand); cand = ''; render(); try { renderUp(); } catch (e) {} } }, 800);
   }
 
+  // ==================== 📢 อัปเดตใหม่วันนี้ (การ์ดหน้าแรก + ข้อความ LINE กลุ่มครู · ข้อมูลชุดเดียวกัน) ====================
+  // ครูทุกคนเห็นแบบเดียวกัน (งานวิจัย) · การกดรับทราบ/เสร็จทำในแอปเท่านั้น · สอนแทนแจ้งเพื่อทราบ (ไม่มีปุ่มรับทราบ)
+  var DL = { d: null, busy: false, open: {}, out: '', kind: '' };
+  var DWS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  function dlDay(iso, yr) { var p = String(iso || '').split('-').map(Number); if (!p[0]) return ''; var w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); return DWS[w] + ' ' + p[2] + ' ' + MS[p[1] - 1] + (yr ? ' ' + String(p[0] + 543).slice(2) : ''); }
+  function dlLoad() {
+    if (DL.busy) return DL.busy;
+    DL.busy = fetch(TT + '?api=daily&t=' + Date.now()).then(function (r) { return r.json(); }).then(function (j) { if (j.ok) DL.d = j.data; }).catch(function () {}).then(function () { DL.busy = false; dlRender(); dlAdmRender(); });
+    return DL.busy;
+  }
+  function dlLink() { return location.origin + location.pathname + '?p=mytasks&src=line&openExternalBrowser=1'; }
+  function dlT(n) { var f = nfn(n); return f ? 'ครู' + f : String(n || ''); }
+  function dlSub(x) { return 'คาบ ' + x.p + ' ' + x.cls + (x.subj ? ' ' + x.subj : '') + ' → ' + x.who + (x.co ? ' (ประกบ)' : ''); }
+  function dlTime(t) { return String(t || '').replace(/:/g, '.'); }
+  /** งานมอบหมายใหม่ = มอบหมายหลังวันทำการก่อนหน้า ถึงวันนี้ (ข้อมูลจากระบบติดตาม) */
+  function dlAsg() {
+    var d = DL.d; if (!d || !S.loaded) return [];
+    var all = pnames().length || 0;
+    return S.G.filter(function (x) { return x.d > d.prev && x.d <= d.today; }).map(function (x) {
+      var C = amSplit(x.m).C, who = all && x.a.length >= all - 2 ? 'ครูทุกคน' : x.a.length > 4 ? x.a.slice(0, 3).map(dlT).join(', ') + ' และอีก ' + (x.a.length - 3) + ' คน' : x.a.map(dlT).join(', ');
+      return { id: x.id, n: C ? C.title : x.n, u: C ? C.date : x.u, who: who };
+    });
+  }
+  function dlSecs() {
+    var d = DL.d; if (!d) return [];
+    var nx = d.next, tm = dlDay(nx), tomorrow = (Date.parse(nx + 'T00:00:00Z') - Date.parse(d.today + 'T00:00:00Z')) === 864e5;
+    var nxLab = tomorrow ? 'พรุ่งนี้ (' + tm + ')' : tm, out = [], A = dlAsg();
+    var CK = { add: '➕ เพิ่ม', move: '📆 เลื่อน', cancel: '❌ ยกเลิก/เลื่อน' };
+    if (d.subs.length) out.push({ k: 'subs', ic: '🔁', h: 'สอนแทน' + nxLab, L: d.subs.map(dlSub), note: true });
+    if (A.length) out.push({ k: 'asg', ic: '📌', h: 'งานมอบหมายใหม่', L: A.map(function (x) { return x.n + ' · ส่ง ' + th(x.u) + ' · ' + x.who; }) });
+    var C = d.cal.changes.map(function (x) { return CK[x.k] + ': ' + x.title + (x.k === 'move' && x.from ? ' (' + th(x.from) + ' → ' + th(x.date) + ')' : x.date ? ' (' + th(x.date) + ')' : '') + (x.note ? ' · ' + x.note : ''); })
+      .concat(d.cal.next.map(function (x) { return (tomorrow ? 'พรุ่งนี้' : tm) + ': ' + x.title + (x.time ? ' ' + dlTime(x.time) + ' น.' : '') + (x.place ? ' · ' + x.place : ''); }));
+    if (C.length) out.push({ k: 'cal', ic: '📅', h: 'ปฏิทินงาน', L: C });
+    if (d.news.length) out.push({ k: 'news', ic: '📣', h: 'ประกาศใหม่', L: d.news.map(function (x) { return (x.u ? '🚨 ' : '') + x.title; }) });
+    if (d.awards.length) out.push({ k: 'aw', ic: '🏆', h: 'รางวัล/เกียรติบัตรใหม่', L: d.awards.map(function (x) { return x.who + ' · ' + x.title + (x.result ? ' (' + x.result + ')' : ''); }) });
+    if (d.night.length) out.push({ k: 'night', ic: '🌙', h: 'เวรกลางคืนวันนี้', L: d.night.map(dlT) });
+    return out;
+  }
+  function dlNow() { var t = new Date(Date.now() + 7 * 3600e3).toISOString(); return t.slice(11, 13) + '.' + t.slice(14, 16); }
+  /** ข้อความ LINE: pm = สรุปอัปเดตวันนี้ (แนะนำ 16.30 น.) · am = อัปเดตสอนแทนวันนี้ (เฉพาะที่ใหม่/เปลี่ยน) */
+  function dlText(kind) {
+    var d = DL.d; if (!d) return '';
+    if (kind === 'am') {
+      var M = d.morning.items; if (!M.length) return '';
+      return '🔁 อัปเดตสอนแทนวันนี้ · ' + dlDay(d.today, 1) + '\n' + M.map(function (x) {
+        return x.k === 'new' ? '🆕 ' + dlSub(x) : x.k === 'edit' ? '✏️ ' + dlSub(x) + ' (เดิม ' + x.was + ')' : '❌ ยกเลิก คาบ ' + x.p + ' ' + x.cls + (x.subj ? ' ' + x.subj : '') + ' (เดิม ' + x.who + ')';
+      }).join('\n') + '\n\n👉 ดูตารางสอนแทนล่าสุดในแอป\n' + dlLink();
+    }
+    var Ls = dlSecs(); if (!Ls.length) return '';
+    var asg = Ls.some(function (s) { return s.k === 'asg'; });
+    return '📢 อัปเดตใหม่วันนี้ · ' + dlDay(d.today, 1) + '\n' + Ls.map(function (s) {
+      return '\n' + s.ic + ' ' + s.h + '\n' + s.L.map(function (t) { return '• ' + t; }).join('\n') + (s.note ? '\nข้อมูล ณ ' + dlNow() + ' น. อาจเปลี่ยนแปลงตอนเช้า ดูล่าสุดในแอป' : '');
+    }).join('\n') + '\n\n👉 ' + (asg ? 'เปิดดูรายละเอียดและกดรับทราบในแอป' : 'เปิดดูรายละเอียดในแอป') + '\n' + dlLink();
+  }
+  // การ์ดหน้าแรก: บรรทัดละเรื่อง · แตะเพื่อดูรายการ · งานมอบหมายกดไปหน้ารับทราบ
+  function dlRender() {
+    var el = document.getElementById('dlCard'); if (!el) return;
+    if (!DL.d) { el.innerHTML = ''; return; }
+    var Ls = dlSecs();
+    if (!Ls.length) { el.innerHTML = '<div class="dl-card dl-none">📢 อัปเดตใหม่วันนี้ · ยังไม่มีความเคลื่อนไหว</div>'; return; }
+    var n = Ls.reduce(function (s, x) { return s + x.L.length; }, 0);
+    el.innerHTML = '<div class="dl-card"><div class="dl-hd"><b>📢 อัปเดตใหม่วันนี้</b><span class="dl-n">' + n + ' เรื่อง</span></div>' +
+      (sget('ch') === 'line' ? '<div class="dl-line">📲 เปิดจากลิงก์ใน LINE</div>' : '') +
+      Ls.map(function (s) {
+        var cnt = s.k === 'subs' ? s.L.length + ' คาบ' : s.L.length + ' รายการ';
+        return '<details class="dl-row"' + (DL.open[s.k] ? ' open' : '') + ' data-dlk="' + s.k + '"><summary><span class="dl-ic">' + s.ic + '</span><span class="dl-tx"><b>' + esc(s.h) + '</b><small>' + (s.k === 'subs' ? 'แจ้งเพื่อทราบ · ' : '') + cnt + '</small></span>' +
+          (s.k === 'asg' ? '<a href="#" class="dl-ack" data-asg="open">รับทราบในแอป</a>' : '<span class="dl-cv">▾</span>') + '</summary>' +
+          '<ul>' + s.L.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' + (s.note ? '<div class="dl-note">ข้อมูลอาจเปลี่ยนแปลงตอนเช้า</div>' : '') + '</details>';
+      }).join('') + '</div>';
+  }
+  document.addEventListener('toggle', function (ev) { var t = ev.target; if (t && t.getAttribute && t.getAttribute('data-dlk')) DL.open[t.getAttribute('data-dlk')] = t.open; }, true);
+  // กล่องในหน้า Admin: ปุ่มสร้างข้อความ + คัดลอก
+  function dlAdmRender() {
+    var ad = document.getElementById('admin'); if (!ad || ad.hidden) return;
+    var box = document.getElementById('dlBox');
+    if (!box) { box = document.createElement('details'); box.id = 'dlBox'; box.className = 'box'; box.open = true; var t0 = ad.querySelector('.tools'); if (t0 && t0.nextSibling) ad.insertBefore(box, t0.nextSibling); else ad.insertBefore(box, ad.firstChild); }
+    var msg = '';
+    if (DL.kind && !DL.d) msg = '<p class="dl-msg">⏳ กำลังโหลดข้อมูลล่าสุด…</p>';
+    else if (DL.kind === 'am' && !DL.out) msg = '<p class="dl-msg dl-ok">✅ วันนี้สอนแทนไม่มีการเปลี่ยนแปลงจากข้อความเมื่อวาน — <b>ไม่ต้องส่ง</b></p>';
+    else if (DL.kind === 'pm' && !DL.out) msg = '<p class="dl-msg dl-ok">✅ วันนี้ยังไม่มีความเคลื่อนไหว — ไม่ต้องส่ง</p>';
+    else if (DL.out) msg = '<textarea id="dlOut" readonly rows="12">' + esc(DL.out) + '</textarea><button class="dl-copy" data-dl="copy">📋 คัดลอกข้อความ</button><p class="dl-hint">วางในกลุ่ม LINE ครู · ครูกดลิงก์แล้วเปิดหน้า "งานของฉัน" ทันที</p>';
+    box.innerHTML = '<summary><b>📢 ข้อความ LINE กลุ่มครู</b> <span style="color:var(--mu);font-size:13px">(อัปเดตใหม่วันนี้ · สอนแทนตอนเช้า)</span></summary>' +
+      '<div class="dl-btns"><button data-dl="pm"' + (DL.kind === 'pm' ? ' class="on"' : '') + '>📝 สรุปอัปเดตวันนี้<small>แนะนำส่ง 16.30 น.</small></button><button data-dl="am"' + (DL.kind === 'am' ? ' class="on"' : '') + '>🌅 อัปเดตสอนแทนวันนี้<small>ตอนเช้า · เฉพาะ 🆕/✏️</small></button></div>' + msg;
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('[data-dl]'); if (!b) return; ev.preventDefault();
+    var a = b.getAttribute('data-dl');
+    if (a === 'pm' || a === 'am') {
+      DL.kind = a; DL.out = ''; DL.d = null; dlAdmRender();
+      var go = function () { DL.out = dlText(a); dlAdmRender(); };
+      Promise.all([dlLoad(), S.loaded ? 0 : load().catch(function () {})]).then(go);
+      return;
+    }
+    if (a === 'copy') {
+      var t = DL.out, ok = function () { toast('✅ คัดลอกแล้ว นำไปวางในกลุ่ม LINE ได้เลย'); }, fb = function () { var ta = document.getElementById('dlOut'); if (ta) { ta.removeAttribute('readonly'); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('กดค้างที่ข้อความแล้วเลือก คัดลอก'); } ta.setAttribute('readonly', ''); } };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, fb); else fb();
+    }
+  });
+  setInterval(function () { var ad = document.getElementById('admin'); if (ad && !ad.hidden && !document.getElementById('dlBox')) dlAdmRender(); }, 1500);
+  /** เปิดจากลิงก์ LINE: จำช่องทางไว้ทั้งรอบการใช้งาน (บันทึกการใช้งานแยก "จาก LINE") แล้วเปิดหน้างานของฉันทันที */
+  function dlEntry() {
+    var q = location.search;
+    if (/[?&]src=line\b/.test(q)) sput('ch', 'line');
+    var my = /[?&]p=mytasks\b/.test(q);
+    if (/[?&](src|p|openExternalBrowser)=/.test(q) && window.history && history.replaceState) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
+    return my;
+  }
+
   function init() {
-    S.me = get('asg_me'); S.pw = sget('asg_pw');
+    S.me = get('asg_me'); S.pw = sget('asg_pw'); var dlMy = dlEntry();
     (function () { var lg = document.createElement('script'); lg.src = 'logos.js?v=1'; document.head.appendChild(lg); })();
     var css = document.createElement('style');
     css.textContent = '#asgBox,#asgBan,#asgToast{font-family:inherit}' +
@@ -1286,6 +1394,7 @@
       '#ctBan{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border-radius:14px;padding:8px 12px;margin:0 0 10px;background:#ECFEFF;border:2px solid #67E8F9;color:#155E75;font-size:15px;box-sizing:border-box;max-width:100%}#ctBan span{min-width:0;overflow-wrap:anywhere}#ctBan button{border:0;border-radius:99px;padding:6px 14px;background:#0891B2;color:#fff;font:inherit;font-weight:700;cursor:pointer;flex:none}.ct-note{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:4px}@media print{#ctBan,#ctBox{display:none!important}}' +
       '.am-t{white-space:pre-line;overflow-wrap:anywhere}.am-t a{color:#1D4ED8;text-decoration:underline}.am-ls{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.am-l{display:inline-block;background:#EEF2FF;color:#3730A3;border-radius:99px;padding:5px 12px;font-weight:700;font-size:13.5px;text-decoration:none}.am-is{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.am-is img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #E5E7EB;display:block}.am-sm{font-size:13px;max-width:100%}.am-old,.am-new{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}.am-old label{display:flex;gap:4px;align-items:center}.am-old img,.am-n img{width:64px;height:64px;object-fit:cover;border-radius:8px;display:block}.am-old small{width:100%;color:#6B7280}.am-n{position:relative}.am-n button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#B91C1C;color:#fff;font-size:12px;cursor:pointer;line-height:22px;padding:0}#asgI{max-width:100%}.mm-btn{align-self:flex-end;margin:0}.mm{display:flex;flex-direction:column;gap:10px;margin-top:10px}.mm-who{font-size:16px}.mm-t{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}.mm-t td{border-bottom:1px solid #E5E7EB;padding:5px 4px;vertical-align:top;overflow-wrap:anywhere}.mm-d{width:70px;color:#374151}.mm-r{width:34%;text-align:right}.mm-sec h4 small{color:#6B7280;font-weight:400}.mm-sign{display:flex;justify-content:space-around;gap:16px;margin-top:26px;text-align:center;line-height:2;font-size:14px;break-inside:avoid}.mm-note{font-size:12px}@media print{.mm-sec{break-inside:avoid;box-shadow:none!important;border:1px solid #ccc}.mm-t{font-size:12pt}.mm-btn{display:none!important}}.up-done{opacity:.6}.ev-chip{display:inline-block;margin-top:3px;font-size:12.5px!important;line-height:1.6!important;font-weight:700;border-radius:99px;padding:1px 9px;max-width:100%;overflow-wrap:anywhere}.ev-ok{background:#DCFCE7;color:#166534}.ev-nil{background:#E0F2FE;color:#075985}.ev-no{background:#FEE2E2;color:#991B1B}.ev-mv{background:#FEF3C7;color:#92400E}.up-ed{flex:none;border:0;background:#EEF2FF;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px;margin-left:auto;align-self:center}.up-next .up-ed{margin-left:8px;vertical-align:middle;background:rgba(255,255,255,.6)}.up-next .ev-chip{display:block;width:max-content;margin-top:6px}' +
       '.ev-opts{display:flex;flex-direction:column;gap:6px;margin:10px 0}.ev-opts label{display:flex;gap:10px;align-items:center;border:1px solid #E5E7EB;border-radius:12px;padding:8px 10px;cursor:pointer}.ev-opts label:has(input:checked){border-color:#4F46E5;background:#EEF2FF}.ev-opts span{display:flex;flex-direction:column}.ev-opts small{color:#6B7280;font-size:12.5px}@media print{.up-ed,#evBox{display:none!important}}' +
+'.dl-card{background:#fff;color:#1F2937;border:2px solid #93C5FD;border-radius:16px;padding:10px 12px;margin:0 0 10px;box-sizing:border-box;max-width:100%}.dl-none{border-width:1px;border-color:#E5E7EB;color:#6B7280;font-size:14px}.dl-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}.dl-hd b{font-size:17px;color:#1E3A8A}.dl-n{background:#DBEAFE;color:#1E40AF;border-radius:99px;padding:1px 10px;font-size:12.5px;font-weight:700;white-space:nowrap}.dl-line{display:inline-block;background:#DCFCE7;color:#166534;border-radius:99px;padding:1px 10px;font-size:12.5px;font-weight:700;margin:2px 0 4px}.dl-row{border-top:1px solid #F1F5F9}.dl-row:first-of-type{border-top:0}.dl-row summary{display:flex;align-items:center;gap:8px;padding:7px 0;cursor:pointer;list-style:none}.dl-row summary::-webkit-details-marker{display:none}.dl-ic{font-size:18px;flex:none}.dl-tx{flex:1;min-width:0;overflow-wrap:anywhere}.dl-tx b{display:block;font-size:15px;color:#1F2937}.dl-tx small{font-size:12.5px;color:#6B7280}.dl-cv{color:#9CA3AF;flex:none}.dl-row[open] .dl-cv{transform:rotate(180deg)}#mwMenu .dl-ack,.dl-ack{flex:none;background:#FEF3C7!important;border:1px solid #FCD34D!important;color:#92400E!important;border-radius:99px!important;padding:3px 10px!important;min-height:0!important;width:auto!important;display:inline-block!important;font-size:12.5px;font-weight:700;text-decoration:none!important;white-space:nowrap}.dl-row ul{margin:0 0 8px;padding-left:34px;font-size:14px;line-height:1.6;color:#374151}.dl-row li{overflow-wrap:anywhere}.dl-note{font-size:12px;color:#9CA3AF;padding-left:34px;margin:-4px 0 6px}#dlBox .dl-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}#dlBox .dl-btns button{font:inherit;font-size:15px;font-weight:700;padding:10px 6px;border-radius:12px;border:1px solid #BFDBFE;background:#EFF6FF;color:#1E3A8A;cursor:pointer;line-height:1.35}#dlBox .dl-btns button.on{background:#2563EB;color:#fff;border-color:#2563EB}#dlBox .dl-btns small{display:block;font-weight:400;font-size:12px;opacity:.85}#dlBox textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;line-height:1.5;padding:10px;border:1px solid #CBD5E1;border-radius:10px;background:#fff;color:#111}#dlBox .dl-copy{display:block;width:100%;margin-top:8px;padding:10px;font:inherit;font-size:16px;font-weight:700;border:0;border-radius:12px;background:#06C755;color:#fff;cursor:pointer}#dlBox .dl-msg{margin:8px 0;font-size:14.5px}#dlBox .dl-ok{background:#ECFDF5;border:1px solid #A7F3D0;color:#166534;border-radius:10px;padding:10px}#dlBox .dl-hint{font-size:12.5px;color:var(--mu);margin:6px 0 0}' +
       '#asgBan{max-width:1200px;margin:8px auto 0;padding:10px 14px;background:#FEF3C7;color:#78350F;border-radius:12px;cursor:pointer;font-size:15px}' +
       '#asgBox{max-width:1200px;margin:12px auto;padding:14px;background:#F4F7FC;color:#1F2937;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}' +
       '.asg-head{display:flex;justify-content:space-between;align-items:center;font-size:19px;margin-bottom:8px}.asg-head button{border:0;background:#e5e7eb;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:16px}' +
@@ -1379,7 +1488,7 @@
     bdLoad(); logU('เปิดแอป'); ctLoad(); evLoad();
     (function () { var f = document.createElement('div'); f.className = 'fb-link'; f.innerHTML = '<a href="#" data-fb="open">💬 แจ้งปัญหา / เสนอแนะการใช้งานแอป</a>'; document.body.appendChild(f); })();
     document.addEventListener('click', mwClick); document.addEventListener('change', mwChange);
-    if (/[?&]my\b/.test(location.search)) setTimeout(function () { mwOpen('me'); }, 300);
+    if (/[?&]my\b/.test(location.search) || dlMy) setTimeout(function () { mwOpen('me'); }, 300);
     if (/[?&#]asg\b/.test(location.href)) S.open = true;
     var mq = location.search.match(/[?&]asg=([^&#]+)/);
     if (mq) { try { var who = decodeURIComponent(mq[1].replace(/\+/g, ' ')); S.me = who; put('asg_me', who); S.tab = 'me'; } catch (e) {} }
