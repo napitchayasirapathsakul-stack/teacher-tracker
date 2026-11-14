@@ -1273,7 +1273,8 @@
     return DL.busy;
   }
   function dlLink() { return location.origin + location.pathname + '?p=mytasks&src=line&openExternalBrowser=1'; }
-  function dlT(n) { var f = nfn(n); return f ? 'ครู' + f : String(n || ''); }
+  var DL_TTL = { 'กาญจนา': 'ผอ.', 'ณพิชญา': 'รองฯ' }; // ผู้บริหาร: ใช้คำนำหน้าตำแหน่งแทน "ครู"
+  function dlT(n) { var r = String(n || ''), f = nfn(r), m = r.match(/^(รองฯ|รอง ผอ\.|ผอ\.)/); return f ? (m ? (m[1] === 'ผอ.' ? 'ผอ.' : 'รองฯ') : (DL_TTL[f] || 'ครู')) + f : r; }
   function dlSub(x) { return 'คาบ ' + x.p + ' ' + x.cls + (x.subj ? ' ' + x.subj : '') + ' → ' + x.who + (x.co ? ' (ประกบ)' : ''); }
   function dlTime(t) { return String(t || '').replace(/:/g, '.'); }
   /** งานมอบหมายใหม่ = มอบหมายหลังวันทำการก่อนหน้า ถึงวันนี้ (ข้อมูลจากระบบติดตาม) */
