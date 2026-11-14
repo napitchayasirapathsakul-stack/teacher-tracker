@@ -371,7 +371,7 @@ function render() {
   var bestT = TV.best.length ? TV.best.filter(function (j) { return ubk(TV.wd, j) === 4; }).concat(TV.best.filter(function (j) { return ubk(TV.wd, j) === 2; }))[0] : -1;
   var rk = bw >= 0 ? (tqIdx(planetOfDay(wd)) - tqIdx(planetOfDay(bw)) + 8) % 8 : -1, RL = rk >= 0 ? ROLE[rk] : null;
   var hp = bs >= 0 ? (D.ms - bs + 12) % 12 : -1, BH = hp >= 0 ? BHOP[hp] : null;
-  var thEv = [RL && RL[3], BH && BH[1], EVT[D.c[0]]].filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+  var thEv = [RL && RL[3], EVT[D.c[0]], EVT[D.c[1]]].filter(function (x, i, a) { return x && a.indexOf(x) === i; });
   var thCa = [RL && RL[4], BH && BH[2]].filter(Boolean); if (!thCa.length) thCa = [D.cr];
   var bp0 = tqIdx(bw >= 0 ? planetOfDay(bw) : planetOfDay(wd)), dech = TQ[(bp0 + 2) % 8], sri = TQ[(bp0 + 3) % 8];
   var W = ws >= 0 ? western(ws, seed) : null, WHh = W ? WH[W.h] : null, lv = W ? Math.round((D.ti + W.sc) / 2) : D.ti;
@@ -382,7 +382,7 @@ function render() {
   var p2 = W ? 'ตามโหราศาสตร์สากล ราศี' + WS[ws].replace(/\s*\(.*$/, '').replace(/^\S+\s/, '') + 'ของท่านวันนี้ ' + WHh[0] + ' พลังของวันเป็น' + WEL[W.mt % 4] + ' ซึ่ง<b>' + W.rel + '</b>กับธาตุของราศีท่าน' + (W.rel === 'ท้าทาย' ? ' จึงควรปรับตัวและใจเย็นเป็นพิเศษ' : W.rel === 'ส่งเสริม' ? ' ช่วยให้เรื่องต่าง ๆ ลื่นไหลขึ้น' : ' ทำให้รู้สึกเป็นตัวของตัวเอง') + ' วันนี้' + WHh[1] + ' แต่ควรระวัง' + WHh[2] : '';
   var p3 = 'ไพ่ประจำวัน ' + D.c.map(function (n) { return NM[n]; }).join(' → ') + ' บอกว่า' + reading(D.c) + ' เลขมงคลวันนี้คือ <b>' + dech + ' และ ' + sri + '</b> (เลขคู่ ' + sri + dech + ' · ' + dech + sri + ')' + (W ? ' เลขนำโชคแบบสากลคือ <b>' + W.num + '</b>' : '') + ' สีเสื้อมงคล<b>' + D.col + '</b> (เสริมอำนาจ: ' + D.col2 + ')' + (W ? ' สีนำโชคแบบสากล' + W.col : '') + ' ทิศมงคล' + D.dir + ' เสริมดวงด้วยการ' + D.merit + ' บูชาพระ' + D.buddha + ' และพก' + D.carry + 'ติดตัว';
   h += '<div class="hr-h">📅 ดวงประจำวันของท่าน</div><div class="hr-sec hr-story"><div class="hr-lv">ระดับดวงวันนี้: ' + STAR[lv] + (RL ? ' · วัน<b>' + RL[0] + '</b>ของท่าน' : '') + '</div><p>' + p1 + '</p>' + (p2 ? '<p>' + p2 + '</p>' : '') + '<p>' + p3 + '</p></div>';
-  h += '<div class="hr-short"><b>🔮 ทำนายสั้น ๆ</b><div>' + ['วันดีมาก เหมาะลงมือเรื่องสำคัญ', 'วันดี ทำงานตามแผนจะราบรื่น', 'ใจเย็น ทำทีละเรื่อง เรื่องใหญ่เลื่อนไปก่อน'][lv] + '</div><div>🍀 เลขมงคล ' + dech + ' · ' + sri + ' · สีเสื้อ' + D.col + '</div><div>⚠️ ระวัง' + thCa[0].replace(/^ระวัง/, '') + '</div>' + (bestT >= 0 ? '<div>🚗 ออกเดินทางดี ' + YDAY[bestT] + ' น.</div>' : '') + '</div>';
+  h += '<div class="hr-short"><b>🔮 ทำนายสั้น ๆ</b><div>' + ['วันดีมาก เหมาะลงมือเรื่องสำคัญ', 'วันดี ทำงานตามแผนจะราบรื่น', 'ใจเย็น ทำทีละเรื่อง เรื่องใหญ่เลื่อนไปก่อน'][lv] + '</div><div>🍀 เลขมงคล ' + dech + ' · ' + sri + ' · สีเสื้อ' + D.col + '</div><div>⚠️ ' + thCa[0] + '</div>' + (bestT >= 0 ? '<div>🚗 ออกเดินทางดี ' + YDAY[bestT] + ' น.</div>' : '') + '</div>';
   // ---------- ฤกษ์เดินทาง ----------
   var cell = function (s, on, t) { var u = UBN[s]; return '<td class="' + u[3] + (on ? ' now' : '') + '"><small>' + t + '</small>' + u[0] + ' ' + u[1] + '<em>' + u[2] + '</em></td>'; };
   h += '<div class="hr-h">🚗 ฤกษ์เดินทางวันนี้ (ยามอุบากอง)</div><div class="hr-sec hr-tr">' +
