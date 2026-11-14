@@ -300,7 +300,6 @@ var TX2 = [
 ];
 // ไพ่ 12 ใบ = 12 เรื่องของชีวิตในเดือนนี้ (แบบ 12 เรือน) [เรื่อง, ไอคอน, ช่องความหมาย]
 var TP12 = [['ตัวท่านเอง', '🧍', 'g'], ['การเงิน', '💰', 'm'], ['การติดต่อสื่อสาร', '💬', 's'], ['บ้านและครอบครัว', '🏠', 'f'], ['ความรักและความสุข', '💗', 'l'], ['สุขภาพ', '🩺', 'h'], ['คู่ครองและคนใกล้ชิด', '🤝', 'l'], ['การเปลี่ยนแปลง', '🔄', 'g'], ['การเรียนรู้และการเดินทาง', '📚', 'a'], ['หน้าที่การงาน', '🧑‍🏫', 'w'], ['เพื่อนและผู้สนับสนุน', '👥', 's'], ['เรื่องในใจที่ซ่อนอยู่', '🌙', 'a']];
-var TKW = [[/รัก|แฟน|คู่|แต่งงาน|หัวใจ/, 4], [/งาน|ครู|สอน|โรงเรียน|ตำแหน่ง|ย้าย|เลื่อน|ผู้บริหาร|นักเรียน/, 9], [/เงิน|หนี้|ซื้อ|ขาย|ลงทุน|โชค|หวย/, 1], [/บ้าน|ครอบครัว|ลูก|พ่อ|แม่|ญาติ/, 3], [/สุขภาพ|ป่วย|โรค|ผ่าตัด|หมอ/, 5], [/เดินทาง|เรียน|สอบ|ต่อ/, 8], [/เพื่อน|ทีม|ผู้ใหญ่/, 10]];
 function thDate(d) { var p = String(d || '').split('-').map(Number), M = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']; return p.length === 3 ? p[2] + ' ' + M[p[1]] + ' ' + (p[0] + 543) : ''; }
 function tShort(n) { return TAR[n][0].replace(/\s*\(.*$/, ''); }
 function tarSvg(x, w) {
@@ -339,12 +338,8 @@ function tRead(o) {
   var sc = o.c.reduce(function (s, x) { return s + tPol(x); }, 0);
   var v = sc >= 17 ? ['🌟 เดือนนี้ดวงดีมาก', 'ไพ่ส่วนใหญ่เป็นใจ เป็นเดือนที่เหมาะลงมือทำเรื่องสำคัญ ผลออกมาดีเกินคาด'] : sc >= 11 ? ['🌤️ เดือนนี้ดวงดี มีเรื่องให้ลุ้น', 'ภาพรวมไปได้ดี มีบางเรื่องต้องใช้ความพยายามและจังหวะที่เหมาะสม'] : ['⏳ เดือนนี้ใช้ความระมัดระวัง', 'มีหลายเรื่องที่ยังไม่ลงตัว ค่อย ๆ แก้ทีละเรื่อง แล้วเรื่องใหญ่ค่อยขยับเดือนถัดไป'];
   var good = [], hard = []; o.c.forEach(function (x, i) { var p = tPol(x); if (p === 2) good.push(TP12[i][1] + ' ' + TP12[i][0]); else if (p === 0) hard.push(TP12[i][1] + ' ' + TP12[i][0]); });
-  var qi = 0; if (o.text) TKW.some(function (k) { if (k[0].test(o.text)) { qi = k[1]; return true; } return false; });
-  var qx = o.c[qi], qp = tPol(qx), half = ['ช่วงต้นเดือน', 'ช่วงกลางเดือน', 'ช่วงปลายเดือน'][qx.n % 3];
   var h = '<div class="hr-ans"><b>' + v[0] + '</b><div>' + v[1] + '</div>' +
     (good.length ? '<div class="hr-gd">✅ เรื่องเด่น: ' + good.join(' · ') + '</div>' : '') + (hard.length ? '<div class="hr-bd">⚠️ เรื่องที่ต้องระวัง: ' + hard.join(' · ') + '</div>' : '') + '</div>';
-  if (o.text) h += '<div class="hr-ans hr-qa"><b>❓ คำตอบสำหรับคำถาม</b><div class="hr-qt">“' + e(o.text) + '”</div><div>ดูจากไพ่ช่อง ' + TP12[qi][1] + ' ' + TP12[qi][0] + ' (' + tShort(qx.n) + (qx.r ? ' กลับหัว' : '') + '): ' +
-    (qp === 2 ? '<b>แนวโน้มดี</b> ' : qp === 1 ? '<b>มีลุ้น ต้องลงมือเพิ่ม</b> ' : '<b>ยังไม่ใช่จังหวะ</b> ') + tTxt(qx, qi) + ' · เรื่องจะชัดขึ้น' + half + '</div></div>';
   h += o.c.map(function (x, i) { return '<div class="hr-li' + (tPol(x) === 0 ? ' hr-ev' : '') + '"><div class="hr-dt">' + (i + 1) + '. ' + TP12[i][1] + ' ' + TP12[i][0] + ' · ' + tShort(x.n) + (x.r ? ' (กลับหัว)' : '') + '</div>' + tTxt(x, i) + '</div>'; }).join('');
   var k = o.c[0], z = o.c[11], WKT = [['สัปดาห์ที่ 1', 0], ['สัปดาห์ที่ 2', 3], ['สัปดาห์ที่ 3', 6], ['สัปดาห์ที่ 4', 9]];
   var wk = '<div class="hr-wkg"><b>🗓️ แนวทางรายสัปดาห์</b>' + WKT.map(function (w) { var g = o.c.slice(w[1], w[1] + 3), sp = g.reduce(function (a, x) { return a + tPol(x); }, 0), best = g.slice().sort(function (a, b) { return tPol(b) - tPol(a); })[0];
@@ -415,8 +410,8 @@ function render() {
   h += '<div class="hr-q" id="hrTar"><b>🔮 ไพ่ทาโรต์ประจำเดือน</b><div class="hr-tip">เลือกไพ่เอง 12 ใบ = 12 เรื่องของชีวิตในเดือนนี้ (ตัวท่าน การเงิน ครอบครัว ความรัก สุขภาพ การงาน ฯลฯ) · เหมาะกับปัญหาตอนนี้ เรื่องเฉพาะหน้า ความรัก และแนวโน้ม 1 เดือน</div><div class="hr-warn">⚠️ ดูได้เดือนละ 1 ครั้ง ตั้งจิตให้มั่นก่อนเลือกไพ่นะคะ</div>';
   if (done) h += '<div class="hr-again">📅 เปิดไพ่เมื่อ ' + thDate(done.d) + ' · <b>ดูไพ่ใหม่ได้อีกครั้งวันที่ ' + nextMonth() + '</b><br><small>ระหว่างนี้กดเข้ามากี่ครั้งก็จะเห็นคำทำนายเดิม</small></div><div class="hr-tg">' + done.c.map(function (x, i) { return '<div>' + tarSvg(x, 80) + '<small>' + (i + 1) + '. ' + TP12[i][0] + '</small></div>'; }).join('') + '</div>' + tRead(done) +
     '<div class="hr-act"><button type="button" class="hr-btn" data-hr="tprint">🖨️ พิมพ์ / บันทึกเป็น PDF</button><button type="button" class="hr-btn gh" data-hr="tcopy">📋 คัดลอกคำทำนาย (ไว้ส่งให้ตัวเองในไลน์)</button></div>';
-  else if (!Q) h += '<textarea id="hrQ" rows="2" maxlength="150" placeholder="คำถามในใจ (ไม่บังคับ) เช่น เดือนนี้งานที่รับผิดชอบจะราบรื่นไหม"></textarea><small>คำถามไม่ถูกส่งไปเก็บที่ไหน</small><button type="button" class="hr-btn" data-hr="shuffle">🔀 สับไพ่ทาโรต์</button>';
-  else h += (Q.text ? '<div class="hr-qt">“' + e(Q.text) + '”</div>' : '') + '<div class="hr-pk">ตั้งจิตแล้วแตะเลือกไพ่ทีละใบ <b>' + Q.sel.length + '/12</b>' + (Q.sel.length < 12 ? ' · ใบต่อไป: ' + TP12[Q.sel.length][1] + ' ' + TP12[Q.sel.length][0] : '') + '</div><div class="hr-deck">' + Q.deck.map(function (x, i) { var k = Q.sel.indexOf(i); return '<a href="#" data-hr="pick:' + i + '" class="' + (k >= 0 ? 'on' : '') + '">' + tarBack(44) + (k >= 0 ? '<i>' + (k + 1) + '</i>' : '') + '</a>'; }).join('') + '</div>' + (Q.sel.length ? '<button type="button" class="hr-btn gh" data-hr="undo">↩️ เลือกใบล่าสุดใหม่</button>' : '');
+  else if (!Q) h += '<small>ตั้งจิตให้มั่น นึกถึงเดือนนี้ของท่าน แล้วกดสับไพ่</small><button type="button" class="hr-btn" data-hr="shuffle">🔀 สับไพ่ทาโรต์</button>';
+  else h += '<div class="hr-pk">ตั้งจิตแล้วแตะเลือกไพ่ทีละใบ <b>' + Q.sel.length + '/12</b>' + (Q.sel.length < 12 ? ' · ใบต่อไป: ' + TP12[Q.sel.length][1] + ' ' + TP12[Q.sel.length][0] : '') + '</div><div class="hr-deck">' + Q.deck.map(function (x, i) { var k = Q.sel.indexOf(i); return '<a href="#" data-hr="pick:' + i + '" class="' + (k >= 0 ? 'on' : '') + '">' + tarBack(44) + (k >= 0 ? '<i>' + (k + 1) + '</i>' : '') + '</a>'; }).join('') + '</div>' + (Q.sel.length ? '<button type="button" class="hr-btn gh" data-hr="undo">↩️ เลือกใบล่าสุดใหม่</button>' : '');
   h += '</div><div class="hr-ft">เพื่อความบันเทิงและเป็นกำลังใจ · ไทย: ทักษาวันเกิด ราศีเกิด และพระจันทร์จริงของวันนี้ · สากล: ราศีระบบสายนะและพระจันทร์ของวันนี้ · ฤกษ์เดินทาง: ยามอุบากองแบบวัน–เวลา · ไพ่ประจำวันสุ่มวันละครั้ง</div>';
   box.innerHTML = h; H.who = who;
 }
@@ -441,7 +436,7 @@ function click(ev) {
     var p = d.split('-').map(Number), y = p[0] > 2400 ? p[0] - 543 : p[0];
     H.other = { name: n, dob: d, ok: true, wd: new Date(Date.UTC(y, p[1] - 1, p[2])).getUTCDay(), sign: signOf(p[1], p[2]), ws: wSignOf(p[1], p[2]) }; H.q = null; return render();
   }
-  if (a[0] === 'shuffle') { var t = ((document.getElementById('hrQ') || {}).value || '').trim(); if (tGet(H.who)) return render(); H.q = { who: H.who, text: t, deck: shuffle(), sel: [] }; return render(); }
+  if (a[0] === 'shuffle') { if (tGet(H.who)) return render(); H.q = { who: H.who, text: '', deck: shuffle(), sel: [] }; return render(); }
   if (a[0] === 'undo') { if (H.q) H.q.sel.pop(); return render(); }
   if (a[0] === 'tprint') { document.body.classList.add('hr-print'); var off = function () { document.body.classList.remove('hr-print'); window.removeEventListener('afterprint', off); }; window.addEventListener('afterprint', off); setTimeout(function () { window.print(); setTimeout(off, 1500); }, 50); return; }
   if (a[0] === 'tcopy') { var o = tGet(H.who); if (!o) return; var tx = tText(o), ok = function () { H.API.toast('คัดลอกแล้ว นำไปวางในไลน์ได้เลยค่ะ'); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tx).then(ok, function () { fb(tx); ok(); }); else { fb(tx); ok(); } return; }
