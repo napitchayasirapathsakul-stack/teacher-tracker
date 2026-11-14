@@ -318,10 +318,21 @@ function tKey(who) { return 'hr_t_' + month() + '_' + hash(who); }
 function tGet(who) { try { return JSON.parse(localStorage.getItem(tKey(who)) || 'null'); } catch (x) { return null; } }
 function tPut(who, o) { try { Object.keys(localStorage).forEach(function (k) { if ((k.indexOf('hr_t_') === 0 && k.indexOf('hr_t_' + month()) !== 0) || k.indexOf('hr_q_') === 0) localStorage.removeItem(k); }); localStorage.setItem(tKey(who), JSON.stringify(o)); } catch (x) {} }
 function nextMonth() { var p = month().split('-').map(Number), m = p[1] % 12 + 1, TM = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']; return '1 ' + TM[m] + ' ' + ((m === 1 ? p[0] + 1 : p[0]) + 543); }
+var TINTRO = ['สะท้อนพลังใจ บุคลิก และตัวตนของท่านตลอดเดือนนี้', 'บอกเรื่องรายรับ รายจ่าย และการบริหารเงินในเดือนนี้', 'บอกเรื่องการพูดคุย ข่าวสาร เอกสาร และการประสานงาน', 'บอกบรรยากาศในบ้าน ครอบครัว และที่อยู่อาศัย', 'บอกเรื่องหัวใจ ความสุข งานอดิเรก และลูกหลาน', 'บอกเรื่องร่างกาย พลังงาน และกิจวัตรประจำวัน', 'บอกความสัมพันธ์กับคู่ครอง คนใกล้ชิด และคู่เจรจา', 'บอกสิ่งที่กำลังจะเปลี่ยน และเรื่องที่ควรปล่อยวาง', 'บอกเรื่องการเรียนรู้ การอบรม และการเดินทาง', 'บอกหน้าที่การงาน ผลงาน และมุมมองของผู้บังคับบัญชา', 'บอกเรื่องเพื่อน ทีม และผู้สนับสนุนรอบตัว', 'บอกความรู้สึกลึก ๆ ที่ท่านอาจยังไม่ได้บอกใคร'];
+var TSEC = ['s', 'w', 'w', 'h', 'f', 'w', 's', 'w', 'w', 'm', 'w', 'l'];
+var TAREA = { s: 'การติดต่อกับผู้คน', w: 'การงาน', h: 'สุขภาพ', f: 'ครอบครัว', l: 'ความรัก', m: 'การเงิน', g: 'ภาพรวม' };
+function tF(x, f) { var t = TAR[x.n], X = TX2[x.n]; return { g: t[4], m: t[7], s: X[2], f: X[0], l: t[5], h: X[1], w: t[6] }[f]; }
 function tTxt(x, i) {
-  var t = TAR[x.n], f = TP12[i][2], X = TX2[x.n];
-  if (x.r) return t[9] + ' · ควร' + t[10];
-  return { g: t[4], m: t[7], s: X[2], f: X[0], l: t[5], h: X[1], w: t[6] }[f] || (i === 8 ? 'สิ่งที่ควรเรียนรู้เดือนนี้: ' + t[8] + ' · ' + t[4] : 'ลึก ๆ ในใจท่านต้องการ' + t[8] + ' · ' + t[4]);
+  var t = TAR[x.n], f = TP12[i][2], main = f === 'a' ? t[4] : tF(x, f), sec = tF(x, TSEC[i]);
+  var when = ['ช่วงต้นเดือน', 'ช่วงกลางเดือน', 'ช่วงปลายเดือน'][(x.n + i) % 3], p = tPol(x);
+  var h = 'ไพ่ใบนี้' + TINTRO[i] + ' ท่านได้ไพ่<b>' + tShort(x.n) + (x.r ? 'แบบกลับหัว' : '') + '</b> ';
+  var negUp = t[2] === 0; // ไพ่ที่หัวตั้งเป็นด้านลบ (พันธนาการ หอคอย ดวงจันทร์) กลับหัวจึงเป็นสัญญาณคลี่คลาย
+  if (x.r && negUp) h += 'ซึ่งเป็นสัญญาณดี คือ' + t[9] + ' เรื่อง' + TP12[i][0].replace(/^เรื่อง/, '') + 'ที่เคยกังวลกำลังค่อย ๆ คลี่คลาย สิ่งที่ยังต้องระวังอยู่บ้างคือ ' + main + ' และด้าน' + TAREA[TSEC[i]] + 'ก็เช่นกัน คือ ' + sec + ' ';
+  else if (x.r) h += 'ซึ่งบอกว่าพลังด้านนี้ยังติดขัดอยู่ คือ' + t[9] + ' ทำให้เรื่อง' + TP12[i][0].replace(/^เรื่อง/, '') + 'อาจยังไม่เป็นอย่างที่หวังเต็มที่ แต่ถ้าปรับแก้ได้ สิ่งดีที่ไพ่ใบนี้ซ่อนไว้คือ ' + main + ' ส่วนด้าน' + TAREA[TSEC[i]] + ' ถ้าแก้จุดติดขัดได้ก็จะดีขึ้น คือ ' + sec + ' ';
+  else h += 'หมายถึง' + t[4] + ' ' + (f === 'a' ? '' : 'สำหรับเรื่อง' + TP12[i][0].replace(/^เรื่อง/, '') + 'เดือนนี้ ' + main + ' ') + 'และยังส่งผลถึง' + TAREA[TSEC[i]] + 'ด้วย คือ ' + sec + ' ';
+  h += 'เรื่องนี้จะเห็นชัดขึ้น' + when;
+  h += '<div class="hr-adv">' + (p === 2 ? '🟢 แนวโน้มดี' : p === 1 ? '🟡 ทรงตัว ต้องลงมือเพิ่ม' : '🔴 ต้องระวัง') + ' · <b>สิ่งที่ควรทำ:</b> ' + (x.r ? t[10] : t[8]) + '</div>';
+  return h;
 }
 function tPol(x) { return x.r ? TAR[x.n][3] : TAR[x.n][2]; }
 function tRead(o) {
@@ -335,8 +346,10 @@ function tRead(o) {
   if (o.text) h += '<div class="hr-ans hr-qa"><b>❓ คำตอบสำหรับคำถาม</b><div class="hr-qt">“' + e(o.text) + '”</div><div>ดูจากไพ่ช่อง ' + TP12[qi][1] + ' ' + TP12[qi][0] + ' (' + tShort(qx.n) + (qx.r ? ' กลับหัว' : '') + '): ' +
     (qp === 2 ? '<b>แนวโน้มดี</b> ' : qp === 1 ? '<b>มีลุ้น ต้องลงมือเพิ่ม</b> ' : '<b>ยังไม่ใช่จังหวะ</b> ') + tTxt(qx, qi) + ' · เรื่องจะชัดขึ้น' + half + '</div></div>';
   h += o.c.map(function (x, i) { return '<div class="hr-li' + (tPol(x) === 0 ? ' hr-ev' : '') + '"><div class="hr-dt">' + (i + 1) + '. ' + TP12[i][1] + ' ' + TP12[i][0] + ' · ' + tShort(x.n) + (x.r ? ' (กลับหัว)' : '') + '</div>' + tTxt(x, i) + '</div>'; }).join('');
-  var k = o.c[0], z = o.c[11];
-  return h + '<div class="hr-sum">💡 <b>คำแนะนำประจำเดือน:</b> ' + (k.r ? TAR[k.n][10] : TAR[k.n][8]) + ' และ' + (z.r ? TAR[z.n][10] : TAR[z.n][8]) + '</div>';
+  var k = o.c[0], z = o.c[11], WKT = [['สัปดาห์ที่ 1', 0], ['สัปดาห์ที่ 2', 3], ['สัปดาห์ที่ 3', 6], ['สัปดาห์ที่ 4', 9]];
+  var wk = '<div class="hr-wkg"><b>🗓️ แนวทางรายสัปดาห์</b>' + WKT.map(function (w) { var g = o.c.slice(w[1], w[1] + 3), sp = g.reduce(function (a, x) { return a + tPol(x); }, 0), best = g.slice().sort(function (a, b) { return tPol(b) - tPol(a); })[0];
+    return '<div><b>' + w[0] + ':</b> ' + (sp >= 5 ? 'จังหวะดี เหมาะลงมือเรื่องสำคัญ' : sp >= 3 ? 'ทรงตัว ทำตามแผนจะราบรื่น' : 'ช้าลงและรอบคอบ อย่าเพิ่งตัดสินใจเรื่องใหญ่') + ' · พลังเด่นของสัปดาห์คือไพ่' + tShort(best.n) + ' (' + (best.r ? TAR[best.n][10] : TAR[best.n][8]) + ')</div>'; }).join('') + '</div>';
+  return h + wk + '<div class="hr-sum">💡 <b>คำแนะนำประจำเดือน:</b> ไพ่ใบแรกที่ท่านเลือก (' + tShort(k.n) + ') เป็นพลังหลักของเดือน บอกให้' + (k.r ? TAR[k.n][10] : TAR[k.n][8]) + ' ส่วนไพ่ใบสุดท้าย (' + tShort(z.n) + ') คือสิ่งที่ใจท่านต้องการ บอกให้' + (z.r ? TAR[z.n][10] : TAR[z.n][8]) + ' ถ้าทำสองอย่างนี้ได้ เดือนนี้จะผ่านไปได้ด้วยดีค่ะ</div>';
 }
 function tText(o) { // ข้อความสำหรับคัดลอก
   var d = document.createElement('div'); d.innerHTML = tRead(o).replace(/<\/div>/g, '</div>\n');
@@ -450,6 +463,7 @@ var CSS = '#hrBox .asg-head b{color:#312E81!important}#hrBox{background:linear-g
   '@media print{body.hr-print *{visibility:hidden!important}body.hr-print #hrTar,body.hr-print #hrTar *{visibility:visible!important}body.hr-print #hrTar{-webkit-print-color-adjust:exact;print-color-adjust:exact;position:absolute;left:0;top:0;width:100%;box-shadow:none}body.hr-print .hr-act,body.hr-print .hr-warn{display:none!important}.hr-li,.hr-ans{break-inside:avoid}}' +
   '.hr-story p{margin:4px 0 8px;text-indent:1.2em}.hr-story p:last-child{margin-bottom:2px}.hr-short{background:linear-gradient(135deg,#7C3AED,#DB2777);color:#fff;border-radius:12px;padding:9px 12px;margin:8px 0;font-size:14.5px;line-height:1.55}.hr-short b{display:block;font-size:16px;margin-bottom:2px}.hr-short div{border-top:1px solid rgba(255,255,255,.25);padding-top:3px;margin-top:3px}' +
   '.hr-now{border-radius:10px;padding:7px 10px;margin:7px 0;font-size:14px;line-height:1.5}.hr-now>b{display:block;font-size:15px}.hr-now.u4{background:#DCFCE7;color:#166534}.hr-now.u2{background:#ECFDF5;color:#15803D}.hr-now.u0{background:#F3F4F6;color:#374151}.hr-now.u1{background:#FFEDD5;color:#9A3412}.hr-now.ux{background:#FEE2E2;color:#991B1B}.hr-leg{font-size:13.5px;margin:6px 0}.hr-leg>b{display:block;color:#312E81;margin-bottom:3px}.hr-leg div{border-radius:7px;padding:4px 8px;margin:3px 0;line-height:1.45}.hr-leg .u4{background:#DCFCE7}.hr-leg .u2{background:#ECFDF5}.hr-leg .u0{background:#F3F4F6}.hr-leg .u1{background:#FFEDD5}.hr-leg .ux{background:#FEE2E2}.hr-leg small,.hr-wk small{display:block;color:#6B7280;font-size:12px;margin-top:3px}.hr-wk{margin-top:8px;background:#F5F3FF;border-radius:9px;padding:6px 8px}.hr-wk summary{font-weight:700;color:#4C1D95;font-size:14px;cursor:pointer}.hr-wk table td{text-align:center;font-size:15px;padding:3px 0}.hr-wk table th{font-size:10.5px;line-height:1.25;font-weight:600}.hr-wk tr>th:first-child{width:52px;font-size:12px;text-align:left}.hr-wk tr.td th{background:#F59E0B;color:#fff;border-radius:6px;padding-left:4px}.hr-wk tr.td td{box-shadow:inset 0 0 0 2px #F59E0B}' +
+  '.hr-adv{margin-top:5px;background:#F8FAFC;border-radius:7px;padding:4px 8px;font-size:13.5px}.hr-wkg{background:#FFFBEB;border-radius:10px;padding:7px 10px;margin:8px 0;font-size:14px;line-height:1.55}.hr-wkg>b{display:block;color:#92400E;font-size:15px}.hr-wkg div{margin-top:4px}.hr-li{line-height:1.65}' +
   '.hr-tip{margin-top:6px;background:#F5F3FF;border-radius:8px;padding:5px 8px;font-size:13.5px}.hr-ft{font-size:12px;color:#6B7280;text-align:center;margin-top:8px}@media(max-width:420px){.hr-deck{grid-template-columns:repeat(6,minmax(0,1fr))}}';
 window.SKHoro = {
   open: function (box, API) {
