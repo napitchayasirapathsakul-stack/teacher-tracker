@@ -1285,11 +1285,21 @@
       return { id: x.id, n: C ? C.title : x.n, u: C ? C.date : x.u, who: who };
     });
   }
+  /** งานที่ยังมีคนไม่กดรับทราบ (ยังไม่เลยกำหนด) — ครูทุกคนเห็นเหมือนกัน เพื่อช่วยเตือนกัน */
+  function dlNick(n) { var p = (S.people || []).filter(function (q) { return q.name === n; })[0]; return p && p.nick ? p.nick : dlT(n); }
+  function dlPend() {
+    if (!S.loaded) return []; var td = today();
+    return S.G.filter(function (x) { return x.u >= td; }).map(function (x) {
+      var C = amSplit(x.m).C, w = x.a.filter(function (n) { return !(x.st[n] || {}).k && state(x, n) !== 'done'; });
+      return { n: C ? C.title : x.n, u: x.u, w: w.map(dlNick) };
+    }).filter(function (x) { return x.w.length; }).sort(function (a, b) { return a.u < b.u ? -1 : 1; });
+  }
   function dlSecs() {
     var d = DL.d; if (!d) return [];
     var nx = d.next, tm = dlDay(nx), tomorrow = (Date.parse(nx + 'T00:00:00Z') - Date.parse(d.today + 'T00:00:00Z')) === 864e5;
     var nxLab = tomorrow ? 'พรุ่งนี้ (' + tm + ')' : tm, out = [], A = dlAsg();
     var CK = { add: '➕ เพิ่ม', move: '📆 เลื่อน', cancel: '❌ ยกเลิก/เลื่อน' };
+    var P = dlPend(); if (P.length) out.push({ k: 'pend', ic: '📌', h: 'ยังไม่รับทราบ', L: P.map(function (x) { return x.n + ' (ส่ง ' + th(x.u) + ') · ยังไม่รับทราบ ' + x.w.length + ' คน: ' + x.w.join(', '); }), cnt: P.reduce(function (t, x) { return t + x.w.length; }, 0) });
     if (d.subs.length) out.push({ k: 'subs', ic: '🔁', h: 'สอนแทน' + nxLab, L: d.subs.map(dlSub), note: true });
     if (A.length) out.push({ k: 'asg', ic: '📌', h: 'งานมอบหมายใหม่', L: A.map(function (x) { return x.n + ' · ส่ง ' + th(x.u) + ' · ' + x.who; }) });
     var C = d.cal.changes.map(function (x) { return CK[x.k] + ': ' + x.title + (x.k === 'move' && x.from ? ' (' + th(x.from) + ' → ' + th(x.date) + ')' : x.date ? ' (' + th(x.date) + ')' : '') + (x.note ? ' · ' + x.note : ''); })
@@ -1310,7 +1320,7 @@
         return x.k === 'new' ? '🆕 ' + dlSub(x) : x.k === 'edit' ? '✏️ ' + dlSub(x) + ' (เดิม ' + x.was + ')' : '❌ ยกเลิก คาบ ' + x.p + ' ' + x.cls + (x.subj ? ' ' + x.subj : '') + ' (เดิม ' + x.who + ')';
       }).join('\n') + '\n\n👉 ดูตารางสอนแทนล่าสุดในแอป\n' + dlLink();
     }
-    var Ls = dlSecs(); if (!Ls.length) return '';
+    var Ls = dlSecs().filter(function (x) { return x.k !== 'pend'; }); if (!Ls.length) return '';
     var asg = Ls.some(function (s) { return s.k === 'asg'; });
     return '📢 อัปเดตใหม่วันนี้ · ' + dlDay(d.today, 1) + '\n' + Ls.map(function (s) {
       return '\n' + s.ic + ' ' + s.h + '\n' + s.L.map(function (t) { return '• ' + t; }).join('\n') + (s.note ? '\nข้อมูล ณ ' + dlNow() + ' น. อาจเปลี่ยนแปลงตอนเช้า ดูล่าสุดในแอป' : '');
@@ -1326,10 +1336,10 @@
     el.innerHTML = '<div class="dl-card"><div class="dl-hd"><b>📢 อัปเดตใหม่วันนี้</b><span class="dl-n">' + n + ' เรื่อง</span></div>' +
       (sget('ch') === 'line' ? '<div class="dl-line">📲 เปิดจากลิงก์ใน LINE</div>' : '') +
       Ls.map(function (s) {
-        var cnt = s.k === 'subs' ? s.L.length + ' คาบ' : s.L.length + ' รายการ';
+        var cnt = s.k === 'subs' ? s.L.length + ' คาบ' : s.k === 'pend' ? s.L.length + ' งาน · ' + s.cnt + ' คน' : s.L.length + ' รายการ';
         return '<details class="dl-row"' + (DL.open[s.k] ? ' open' : '') + ' data-dlk="' + s.k + '"><summary><span class="dl-ic">' + s.ic + '</span><span class="dl-tx"><b>' + esc(s.h) + '</b><small>' + (s.k === 'subs' ? 'แจ้งเพื่อทราบ · ' : '') + cnt + '</small></span>' +
-          (s.k === 'asg' ? '<a href="#" class="dl-ack" data-asg="open">รับทราบในแอป</a>' : '<span class="dl-cv">▾</span>') + '</summary>' +
-          '<ul>' + s.L.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' + (s.note ? '<div class="dl-note">ข้อมูลอาจเปลี่ยนแปลงตอนเช้า</div>' : '') + '</details>';
+          (s.k === 'asg' || s.k === 'pend' ? '<a href="#" class="dl-ack" data-asg="open">รับทราบในแอป</a>' : '<span class="dl-cv">▾</span>') + '</summary>' +
+          '<ul>' + s.L.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' + (s.note ? '<div class="dl-note">ข้อมูลอาจเปลี่ยนแปลงตอนเช้า</div>' : s.k === 'pend' ? '<div class="dl-note">🙏 ช่วยกันเตือนเพื่อนครูกดรับทราบในแอปนะคะ</div>' : '') + '</details>';
       }).join('') + '</div>';
   }
   document.addEventListener('toggle', function (ev) { var t = ev.target; if (t && t.getAttribute && t.getAttribute('data-dlk')) DL.open[t.getAttribute('data-dlk')] = t.open; }, true);
