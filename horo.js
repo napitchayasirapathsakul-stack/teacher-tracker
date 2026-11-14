@@ -215,6 +215,9 @@ function moonLonT(dt) { // ลองจิจูดพระจันทร์�
   return ((L + 6.289 * Math.sin(Mp * r) + 1.274 * Math.sin((2 * D - Mp) * r) + 0.658 * Math.sin(2 * D * r) + 0.214 * Math.sin(2 * Mp * r) - 0.186 * Math.sin(M * r) - 0.114 * Math.sin(2 * F * r)) % 360 + 360) % 360;
 }
 function wSignOf(m, d) { var st = [[1, 20, 10], [2, 19, 11], [3, 21, 0], [4, 20, 1], [5, 21, 2], [6, 21, 3], [7, 23, 4], [8, 23, 5], [9, 23, 6], [10, 23, 7], [11, 22, 8], [12, 22, 9]], md = m * 100 + d, s = 9; st.forEach(function (x) { if (md >= x[0] * 100 + x[1]) s = x[2]; }); return s; }
+function bdKey(nm) { return 'hr_bd_' + hash(nm); }
+function bdGet(nm) { try { return JSON.parse(localStorage.getItem(bdKey(nm)) || 'null'); } catch (x) { return null; } }
+function bdPut(nm, o) { try { if (o) localStorage.setItem(bdKey(nm), JSON.stringify(o)); else localStorage.removeItem(bdKey(nm)); } catch (x) {} }
 function wsKey(nm) { return 'hr_ws_' + hash(nm); }
 function wsGet(nm) { try { var v = localStorage.getItem(wsKey(nm)); return v === null ? -1 : Number(v); } catch (x) { return -1; } }
 function wsPut(nm, v) { try { localStorage.setItem(wsKey(nm), String(v)); } catch (x) {} }
@@ -445,10 +448,15 @@ function render() {
     if (!O.ok) { box.innerHTML = h; return; }
     B = { wd: O.wd, sign: O.sign }; who = 'o|' + O.name + '|' + O.dob; seed = who;
   }
+  // ไม่มีวันเกิดในข้อมูลบุคลากร → ให้ครูระบุเอง (เก็บในเครื่องนี้เท่านั้น ไม่ส่งไปที่ไหน)
+  var LB = !other ? bdGet(who) : null, noBd = !other && !(B.wd >= 0);
+  if (noBd && LB) B = { wd: LB.wd, sign: LB.sign };
   var bw = B.wd >= 0 ? B.wd : -1, bs = B.sign >= 0 ? B.sign : -1, D = daily(seed, bw, bs), wd = new Date(today() + 'T12:00:00+07:00').getDay();
   // ราศีตะวันตก: คนอื่น = คำนวณจากวันเกิดจริง · ของฉัน = เลือกเอง (ค่าเริ่มต้นเดาจากราศีไทย)
-  var ws = other ? H.other.ws : (wsGet(who) >= 0 ? wsGet(who) : (bs >= 0 ? (bs + 1) % 12 : -1)), wsGuess = !other && wsGet(who) < 0;
-  h += '<div class="hr-who">' + (other ? '<b>' + e(H.other.name) + '</b><br>' : '') + (bw >= 0 ? 'เกิด<b>วัน' + DAY[bw] + '</b> · ราศีไทย <b>' + SIGN[bs] + '</b>' + (ws >= 0 ? ' · ราศีตะวันตก <b>' + WS[ws].replace(/\s*\(.*$/, '') + '</b>' : '') : '<small>ยังไม่มีวันเกิดในข้อมูลบุคลากร (แจ้งแอดมินเพิ่มได้) · ดวงนี้อิงพระจันทร์ของวันนี้</small>') + '<br><small>วันนี้พระจันทร์อยู่ราศี' + SIGN[D.ms] + ' (ระบบไทย)</small></div>';
+  var ws = other ? H.other.ws : (wsGet(who) >= 0 ? wsGet(who) : LB ? LB.ws : (bs >= 0 ? (bs + 1) % 12 : -1)), wsGuess = !other && wsGet(who) < 0 && !LB;
+  h += '<div class="hr-who">' + (other ? '<b>' + e(H.other.name) + '</b><br>' : '') + (bw >= 0 ? 'เกิด<b>วัน' + DAY[bw] + '</b> · ราศีไทย <b>' + SIGN[bs] + '</b>' + (ws >= 0 ? ' · ราศีตะวันตก <b>' + WS[ws].replace(/\s*\(.*$/, '') + '</b>' : '') : '<small>ยังไม่มีวันเกิด · ดวงด้านล่างอิงพระจันทร์ของวันนี้</small>') + '<br><small>วันนี้พระจันทร์อยู่ราศี' + SIGN[D.ms] + ' (ระบบไทย)</small></div>';
+  if (noBd && !LB) h += '<div class="hr-bdf"><b>🎂 ระบุวันเดือนปีเกิดของท่าน</b><div>ในข้อมูลบุคลากรยังไม่มีวันเกิดของท่าน กรอกครั้งเดียวเพื่อให้ดวงไทย ดวงตะวันตก และวันกาลกิณีตรงกับท่าน</div><input type="date" id="hrBd"><button type="button" class="hr-btn" data-hr="bd">✅ บันทึกวันเกิด</button><small>เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งไปเก็บที่ไหน · ถ้าเปลี่ยนเครื่องต้องกรอกใหม่</small></div>';
+  else if (noBd && LB) h += '<div class="hr-bdok">🎂 วันเกิดที่ท่านระบุไว้: ' + thDate(LB.dob) + ' <a href="#" data-hr="bdedit">แก้ไข</a></div>';
   var TV = travel(bw), STAR = ['🌟🌟🌟 ดีมาก', '🌟🌟 ดี', '🌟 ปานกลาง ใช้ความรอบคอบ'];
   var bestT = TV.best.length ? TV.best.filter(function (j) { return ubk(TV.wd, j) === 4; }).concat(TV.best.filter(function (j) { return ubk(TV.wd, j) === 2; }))[0] : -1;
   var rk = bw >= 0 ? (tqIdx(planetOfDay(wd)) - tqIdx(planetOfDay(bw)) + 8) % 8 : -1, RL = rk >= 0 ? ROLE[rk] : null;
@@ -516,6 +524,8 @@ function click(ev) {
     H.other = { name: n, dob: d, ok: true, wd: new Date(Date.UTC(y, p[1] - 1, p[2])).getUTCDay(), sign: signOf(p[1], p[2]), ws: wSignOf(p[1], p[2]) }; H.q = null; return render();
   }
   if (a[0] === 'shuffle') { if (tGet(H.who)) return render(); H.q = { who: H.who, text: '', deck: shuffle(), sel: [] }; return render(); }
+  if (a[0] === 'bd') { var bd = (document.getElementById('hrBd') || {}).value || ''; if (!/^\d{4}-\d{2}-\d{2}$/.test(bd)) { H.API.toast('กรุณาเลือกวันเดือนปีเกิด'); return; } var q = bd.split('-').map(Number), yy = q[0] > 2400 ? q[0] - 543 : q[0]; bdPut(H.who, { dob: (yy) + bd.slice(4), wd: new Date(Date.UTC(yy, q[1] - 1, q[2])).getUTCDay(), sign: signOf(q[1], q[2]), ws: wSignOf(q[1], q[2]) }); try { localStorage.removeItem(wsKey(H.who)); } catch (x) {} H.API.toast('บันทึกวันเกิดแล้วค่ะ'); return render(); }
+  if (a[0] === 'bdedit') { bdPut(H.who, null); return render(); }
   if (a[0] === 'undo') { if (H.q) H.q.sel.pop(); return render(); }
   if (a[0] === 'tprint') { document.body.classList.add('hr-print'); var off = function () { document.body.classList.remove('hr-print'); window.removeEventListener('afterprint', off); }; window.addEventListener('afterprint', off); setTimeout(function () { window.print(); setTimeout(off, 1500); }, 50); return; }
   if (a[0] === 'tcopy') { var o = tGet(H.who); if (!o) return; var tx = tText(o), ok = function () { H.API.toast('คัดลอกแล้ว นำไปวางในไลน์ได้เลยค่ะ'); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tx).then(ok, function () { fb(tx); ok(); }); else { fb(tx); ok(); } return; }
@@ -540,6 +550,7 @@ var CSS = '#hrBox .asg-head b{color:#312E81!important}#hrBox{background:linear-g
   '.hr-adv{margin-top:5px;background:#F8FAFC;border-radius:7px;padding:4px 8px;font-size:13.5px}.hr-wkg{background:#FFFBEB;border-radius:10px;padding:7px 10px;margin:8px 0;font-size:14px;line-height:1.55}.hr-wkg>b{display:block;color:#92400E;font-size:15px}.hr-wkg div{margin-top:4px}.hr-li{line-height:1.65}' +
   '.hr-deck.t78{grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}.hr-deck.t78 a i{width:17px;height:17px;line-height:17px;font-size:10.5px}' +
   '.hr-sys{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:8px 0}.hr-sys span{font-weight:700;color:#4C1D95;font-size:14px;margin-right:2px}.hr-sys button{flex:1 1 auto;border:1px solid #C4B5FD;background:#fff;color:#5B21B6;border-radius:999px;padding:6px 10px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}.hr-sys button.on{background:#7C3AED;border-color:#7C3AED;color:#fff;font-weight:700}.hr-h small{font-size:13px;font-weight:400;color:#6D28D9}' +
+  '.hr-bdf{background:#FFF7ED;border:2px dashed #FB923C;border-radius:12px;padding:9px 11px;margin:8px 0;font-size:14px;line-height:1.5;color:#7C2D12}.hr-bdf b{display:block;font-size:16px;color:#C2410C}.hr-bdf input{display:block;width:100%;box-sizing:border-box;margin:7px 0;padding:8px;border:1px solid #FDBA74;border-radius:9px;font:inherit;font-size:16px}.hr-bdf small{display:block;color:#9A3412;font-size:12.5px;margin-top:4px}.hr-bdok{text-align:center;font-size:13px;color:#6D28D9;margin:2px 0 6px}.hr-bdok a{color:#7C3AED}' +
   '.hr-tip{margin-top:6px;background:#F5F3FF;border-radius:8px;padding:5px 8px;font-size:13.5px}.hr-ft{font-size:12px;color:#6B7280;text-align:center;margin-top:8px}@media(max-width:420px){.hr-deck{grid-template-columns:repeat(6,minmax(0,1fr))}}';
 window.SKHoro = {
   open: function (box, API) {
