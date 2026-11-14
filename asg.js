@@ -1066,7 +1066,7 @@
     var box = document.getElementById('hrBox'); if (!box) return;
     if (window.SKHoro) return window.SKHoro.open(box, HR_API);
     box.style.display = ''; box.innerHTML = '<div class="asg-empty">กำลังเปิดดวงของฉันวันนี้…</div>';
-    var s = document.createElement('script'); s.src = 'horo.js?v=4'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'horo.js?v=5'; s.onload = function () { window.SKHoro.open(box, HR_API); }; s.onerror = function () { box.innerHTML = '<div class="asg-empty">เปิดไม่สำเร็จ ลองกด 🔄 รีเฟรช</div>'; }; document.head.appendChild(s);
   }
   document.addEventListener('click', function (ev) { var el = ev.target.closest && ev.target.closest('[data-hr-open]'); if (el) { ev.preventDefault(); hrOpen(); } });
   // 🎯 ติวเข้ม O-NET ป.6 (โหลดไฟล์ onet.js เมื่อกดเท่านั้น)
