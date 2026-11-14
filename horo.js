@@ -191,6 +191,7 @@ var BHOP = [
 var WS = ['♈ เมษ (Aries)', '♉ พฤษภ (Taurus)', '♊ เมถุน (Gemini)', '♋ กรกฎ (Cancer)', '♌ สิงห์ (Leo)', '♍ กันย์ (Virgo)', '♎ ตุลย์ (Libra)', '♏ พิจิก (Scorpio)', '♐ ธนู (Sagittarius)', '♑ มังกร (Capricorn)', '♒ กุมภ์ (Aquarius)', '♓ มีน (Pisces)'];
 var WSD = ['21 มี.ค.–19 เม.ย.', '20 เม.ย.–20 พ.ค.', '21 พ.ค.–20 มิ.ย.', '21 มิ.ย.–22 ก.ค.', '23 ก.ค.–22 ส.ค.', '23 ส.ค.–22 ก.ย.', '23 ก.ย.–22 ต.ค.', '23 ต.ค.–21 พ.ย.', '22 พ.ย.–21 ธ.ค.', '22 ธ.ค.–19 ม.ค.', '20 ม.ค.–18 ก.พ.', '19 ก.พ.–20 มี.ค.'];
 var WRUL = [['ดาวอังคาร', 9], ['ดาวศุกร์', 6], ['ดาวพุธ', 5], ['ดวงจันทร์', 2], ['ดวงอาทิตย์', 1], ['ดาวพุธ', 5], ['ดาวศุกร์', 6], ['ดาวพลูโต', 9], ['ดาวพฤหัสบดี', 3], ['ดาวเสาร์', 8], ['ดาวยูเรนัส', 4], ['ดาวเนปจูน', 7]];
+var WRULT = ['ให้พลังความกล้าและความเด็ดขาด', 'ให้เสน่ห์ ความอ่อนโยน และโชคเรื่องความรัก', 'ให้ไหวพริบ การสื่อสาร และการเรียนรู้', 'ให้ความอ่อนโยนและความเห็นอกเห็นใจ', 'ให้ความมั่นใจและบารมี', 'ให้ไหวพริบ การสื่อสาร และการเรียนรู้', 'ให้เสน่ห์ ความอ่อนโยน และโชคเรื่องความรัก', 'ให้พลังความมุ่งมั่นและการเปลี่ยนแปลง', 'ให้โชค ปัญญา และผู้ใหญ่อุปถัมภ์', 'ให้ความอดทนและความรับผิดชอบ', 'ให้ความคิดใหม่ ๆ ที่ไม่เหมือนใคร', 'ให้จินตนาการและสัญชาตญาณ']; // ความหมายดาวประจำราศี (เรียงตามราศี)
 var WCOL = ['แดง', 'เขียว', 'เหลือง', 'ขาว/เงิน', 'ทอง', 'น้ำตาลอ่อน', 'ชมพู', 'แดงเข้ม', 'ม่วง', 'เทาเข้ม', 'ฟ้า', 'เขียวน้ำทะเล'];
 var WEL = ['ธาตุไฟ: กระตือรือร้น กล้าลงมือ', 'ธาตุดิน: มั่นคง ทำงานเป็นขั้นตอน', 'ธาตุลม: ความคิดแล่น สื่อสารคล่อง', 'ธาตุน้ำ: อารมณ์ความรู้สึกและความเห็นอกเห็นใจเด่น'];
 // เรือนที่พระจันทร์โคจรผ่าน (นับจากราศีของท่าน) [หัวข้อ, เหตุการณ์, สิ่งที่ต้องระวัง]
@@ -214,8 +215,6 @@ function moonLonT(dt) { // ลองจิจูดพระจันทร์�
   return ((L + 6.289 * Math.sin(Mp * r) + 1.274 * Math.sin((2 * D - Mp) * r) + 0.658 * Math.sin(2 * D * r) + 0.214 * Math.sin(2 * Mp * r) - 0.186 * Math.sin(M * r) - 0.114 * Math.sin(2 * F * r)) % 360 + 360) % 360;
 }
 function wSignOf(m, d) { var st = [[1, 20, 10], [2, 19, 11], [3, 21, 0], [4, 20, 1], [5, 21, 2], [6, 21, 3], [7, 23, 4], [8, 23, 5], [9, 23, 6], [10, 23, 7], [11, 22, 8], [12, 22, 9]], md = m * 100 + d, s = 9; st.forEach(function (x) { if (md >= x[0] * 100 + x[1]) s = x[2]; }); return s; }
-function sysGet() { try { var v = localStorage.getItem('hr_sys'); return v === 'west' || v === 'both' ? v : 'th'; } catch (x) { return 'th'; } }
-function sysPut(v) { try { localStorage.setItem('hr_sys', v); } catch (x) {} }
 function wsKey(nm) { return 'hr_ws_' + hash(nm); }
 function wsGet(nm) { try { var v = localStorage.getItem(wsKey(nm)); return v === null ? -1 : Number(v); } catch (x) { return -1; } }
 function wsPut(nm, v) { try { localStorage.setItem(wsKey(nm), String(v)); } catch (x) {} }
@@ -457,15 +456,14 @@ function render() {
   var thEv = [RL && RL[3], EVT[D.c[0]], EVT[D.c[1]]].filter(function (x, i, a) { return x && a.indexOf(x) === i; });
   var thCa = [RL && RL[4], BH && BH[2]].filter(Boolean); if (!thCa.length) thCa = [D.cr];
   var bp0 = tqIdx(bw >= 0 ? planetOfDay(bw) : planetOfDay(wd)), dech = TQ[(bp0 + 2) % 8], sri = TQ[(bp0 + 3) % 8];
-  var sys = sysGet(), useTh = sys !== 'west', useW = sys !== 'th' && ws >= 0;
+  var sys = 'both', useTh = sys !== 'west', useW = sys !== 'th' && ws >= 0;
   var W = ws >= 0 ? western(ws, seed) : null, WHh = W ? WH[W.h] : null;
   var lv = useTh && useW ? Math.round((D.ti + W.sc) / 2) : useW ? W.sc : D.ti;
   // ---------- ดวงประจำวัน: ให้เลือกเองว่าดูแบบไทย ตะวันตก หรือทั้งสองแบบ ----------
-  h += '<div class="hr-sys"><span>ดูดวงแบบ</span>' + [['th', '🇹🇭 ศาสตร์ไทย'], ['west', '🌍 ศาสตร์ตะวันตก'], ['both', '✨ ไทย + ตะวันตก']].map(function (x) { return '<button type="button" data-hr="sys:' + x[0] + '" class="' + (sys === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
   if (!other && sys !== 'th') h += '<label class="asg-f hr-wsel">ราศีตะวันตกของฉัน (ใช้ดูดวงแบบตะวันตก)<select id="hrWs"><option value="">— เลือกราศีตะวันตก —</option>' + WS.map(function (s, i) { return '<option value="' + i + '"' + (i === ws ? ' selected' : '') + '>' + s + ' · ' + WSD[i] + '</option>'; }).join('') + '</select>' + (wsGuess && ws >= 0 ? '<small>ระบบเดาจากราศีไทย ถ้าไม่ตรงกับวันเกิดของท่าน เลือกใหม่ได้ (จำไว้ในเครื่องนี้)</small>' : '') + '</label>';
   h += '<div class="hr-cards">' + D.c.map(function (n) { return '<div>' + cardSvg(n, 100) + '</div>'; }).join('') + '</div>';
-  var p1 = useTh ? (RL ? RL[2] : D.ov) + (BH ? ' นอกจากนี้พระจันทร์ยังโคจรผ่านภพ<b>' + BH[0] + '</b>ของท่าน ' + BH[1] : '') + ' เหตุการณ์ที่อาจเกิดขึ้นวันนี้ ' + thEv.join(' และ') + ' ส่วนสิ่งที่ต้องระวังคือ ' + thCa.join(' รวมถึง') : '';
-  var p2 = useW ? (useTh ? 'ตามโหราศาสตร์ตะวันตก ' : '') + 'ราศี' + WS[ws].replace(/\s*\(.*$/, '').replace(/^\S+\s/, '') + 'ของท่านวันนี้ ' + WHh[0] + ' พลังของวันเป็น' + WEL[W.mt % 4] + ' ซึ่ง<b>' + W.rel + '</b>กับธาตุของราศีท่าน' + (W.rel === 'ท้าทาย' ? ' จึงควรปรับตัวและใจเย็นเป็นพิเศษ' : W.rel === 'ส่งเสริม' ? ' ช่วยให้เรื่องต่าง ๆ ลื่นไหลขึ้น' : ' ทำให้รู้สึกเป็นตัวของตัวเอง') + ' วันนี้' + WHh[1] + ' แต่ควรระวัง' + WHh[2] : '';
+  var p1 = useTh ? (RL ? RL[2] : D.ov) + (BH ? ' นอกจากนี้พระจันทร์ยังโคจรผ่านภพ<b>' + BH[0] + '</b>ของท่าน ' + BH[1] : '') + ' เหตุการณ์ที่อาจเกิดขึ้นวันนี้ ' + thEv.join(' และ') + ' ด้านการงานและการเงิน ' + D.wk + ' ส่วนเรื่องความรักและคนใกล้ชิด ' + D.lv + ' สิ่งที่ต้องระวังวันนี้คือ ' + thCa.join(' รวมถึง') + ' และ' + D.cr : '';
+  var p2 = useW ? (useTh ? 'ตามโหราศาสตร์ตะวันตก ' : '') + 'ราศี' + WS[ws].replace(/\s*\(.*$/, '').replace(/^\S+\s/, '') + 'ของท่านวันนี้ ' + WHh[0] + ' พลังของวันเป็น' + WEL[W.mt % 4] + ' ซึ่ง<b>' + W.rel + '</b>กับธาตุของราศีท่าน' + (W.rel === 'ท้าทาย' ? ' จึงควรปรับตัวและใจเย็นเป็นพิเศษ' : W.rel === 'ส่งเสริม' ? ' ช่วยให้เรื่องต่าง ๆ ลื่นไหลขึ้น' : ' ทำให้รู้สึกเป็นตัวของตัวเอง') + ' ดาวประจำราศีของท่านคือ' + WRUL[ws][0] + ' ซึ่ง' + WRULT[ws] + ' ส่วนพระจันทร์วันนี้อยู่ราศี' + WS[W.mt].replace(/\s*\(.*$/, '').replace(/^\S+\s/, '') + ' ได้อิทธิพลจาก' + WRUL[W.mt][0] + ' ที่' + WRULT[W.mt] + ' เหตุการณ์ที่อาจเกิดขึ้นวันนี้ ' + WHh[1] + ' แต่ควรระวัง' + WHh[2] : '';
   var luckTh = 'เลขมงคลวันนี้คือ <b>' + dech + ' และ ' + sri + '</b> (เลขคู่ ' + sri + dech + ' · ' + dech + sri + ') สีเสื้อมงคล<b>' + D.col + '</b> (เสริมอำนาจ: ' + D.col2 + ') ทิศมงคล' + D.dir + ' เสริมดวงด้วยการ' + D.merit + ' บูชาพระ' + D.buddha + ' และพก' + D.carry + 'ติดตัว';
   var luckW = W ? 'เลขนำโชค' + (useTh ? 'แบบตะวันตก' : '') + 'คือ <b>' + W.num + '</b> สีนำโชค<b>' + W.col + '</b> (สีเสริม: ' + W.col2 + ')' : '';
   var p3 = 'ไพ่ประจำวัน ' + D.c.map(function (n) { return NM[n]; }).join(' → ') + ' บอกว่า' + reading(D.c) + ' ' + (useTh && useW ? luckTh + ' ' + luckW : useW ? luckW : luckTh);
@@ -518,7 +516,6 @@ function click(ev) {
     H.other = { name: n, dob: d, ok: true, wd: new Date(Date.UTC(y, p[1] - 1, p[2])).getUTCDay(), sign: signOf(p[1], p[2]), ws: wSignOf(p[1], p[2]) }; H.q = null; return render();
   }
   if (a[0] === 'shuffle') { if (tGet(H.who)) return render(); H.q = { who: H.who, text: '', deck: shuffle(), sel: [] }; return render(); }
-  if (a[0] === 'sys') { sysPut(a[1]); return render(); }
   if (a[0] === 'undo') { if (H.q) H.q.sel.pop(); return render(); }
   if (a[0] === 'tprint') { document.body.classList.add('hr-print'); var off = function () { document.body.classList.remove('hr-print'); window.removeEventListener('afterprint', off); }; window.addEventListener('afterprint', off); setTimeout(function () { window.print(); setTimeout(off, 1500); }, 50); return; }
   if (a[0] === 'tcopy') { var o = tGet(H.who); if (!o) return; var tx = tText(o), ok = function () { H.API.toast('คัดลอกแล้ว นำไปวางในไลน์ได้เลยค่ะ'); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tx).then(ok, function () { fb(tx); ok(); }); else { fb(tx); ok(); } return; }
